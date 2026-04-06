@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/providers/user_provider.dart';
+import '../../features/auth/auth_view_model.dart';
 import '../home/home_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -25,26 +26,26 @@ class _AuthScreenState extends State<AuthScreen>
   final _registerFormKey = GlobalKey<FormState>();
 
   // ── Text controllers ───────────────────────────────────────────
-  final _loginUsernameCtrl      = TextEditingController();
-  final _loginPasswordCtrl    = TextEditingController();
-  final _registerNameCtrl     = TextEditingController();
-  final _registerUsernameCtrl = TextEditingController();
-  final _registerPasswordCtrl = TextEditingController();
-  final _registerConfirmCtrl  = TextEditingController();
+  final _loginEmailCtrl         = TextEditingController();
+  final _loginPasswordCtrl      = TextEditingController();
+  final _registerNameCtrl       = TextEditingController();
+  final _registerEmailCtrl      = TextEditingController();
+  final _registerPasswordCtrl   = TextEditingController();
+  final _registerConfirmCtrl    = TextEditingController();
 
   // ── Google panel ───────────────────────────────────────────────
-  final _googleUsernameCtrl = TextEditingController();
+  final _googleEmailCtrl   = TextEditingController();
   final _googleFocusNode   = FocusNode();
   bool   _showGooglePanel  = false;
-  bool   _googleUsernameError = false;
-  String _googleUsernameErrText = '';
+  bool   _googleEmailError = false;
+  String _googleEmailErrText = '';
   bool   _isGoogleLoading  = false;
 
   // ── Visibility toggles ─────────────────────────────────────────
   bool _loginPassVisible    = false;
   bool _registerPassVisible = false;
   bool _registerConfVisible = false;
-  
+
   // ── Additional auth features ───────────────────────────────────
   bool _rememberMe = false;
 
@@ -57,7 +58,7 @@ class _AuthScreenState extends State<AuthScreen>
   late Animation<Offset>   _pageSlide;
 
   late AnimationController _pillAnim;
-  late Animation<double>   _pillPos; // 0 = Sign In, 1 = Sign Up
+  late Animation<double>   _pillPos;
 
   late AnimationController _googlePanelAnim;
   late Animation<double>   _googlePanel;
@@ -86,13 +87,13 @@ class _AuthScreenState extends State<AuthScreen>
 
   @override
   void dispose() {
-    _loginUsernameCtrl.dispose();
+    _loginEmailCtrl.dispose();
     _loginPasswordCtrl.dispose();
     _registerNameCtrl.dispose();
-    _registerUsernameCtrl.dispose();
+    _registerEmailCtrl.dispose();
     _registerPasswordCtrl.dispose();
     _registerConfirmCtrl.dispose();
-    _googleUsernameCtrl.dispose();
+    _googleEmailCtrl.dispose();
     _googleFocusNode.dispose();
     _pageAnim.dispose();
     _pillAnim.dispose();
@@ -105,23 +106,18 @@ class _AuthScreenState extends State<AuthScreen>
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => HomeScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(
-          opacity: animation,
-          child: child,
-        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            FadeTransition(opacity: animation, child: child),
         transitionDuration: const Duration(milliseconds: 400),
       ),
     );
   }
 
-  // ── Guest Account ─────────────────────────────────────────────────
+  // ── Guest Access ───────────────────────────────────────────────
   void _handleGuestAccess() {
     HapticFeedback.lightImpact();
-    
-    // Create a guest user
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     userProvider.createSampleUser('Guest User');
-    
     _showSuccessSnack('Welcome, Guest!');
     Future.delayed(const Duration(milliseconds: 500),
         () { if (mounted) _navigateToHome(); });
@@ -134,8 +130,8 @@ class _AuthScreenState extends State<AuthScreen>
     setState(() {
       _isSignIn        = toSignIn;
       _showGooglePanel = false;
-      _googleUsernameCtrl.clear();
-      _googleUsernameError = false;
+      _googleEmailCtrl.clear();
+      _googleEmailError = false;
     });
     toSignIn ? _pillAnim.reverse() : _pillAnim.forward();
     _googlePanelAnim.reverse();
@@ -147,16 +143,20 @@ class _AuthScreenState extends State<AuthScreen>
     if (!_loginFormKey.currentState!.validate()) return;
     HapticFeedback.mediumImpact();
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1400));
+
+    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+    final success = await authViewModel.signIn(
+      _loginEmailCtrl.text.trim(),
+      _loginPasswordCtrl.text,
+    );
+
     if (mounted) {
       setState(() => _isLoading = false);
-      
-      // Create user from login form
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final name = _loginUsernameCtrl.text;
-      userProvider.createSampleUser(name);
-      
-      _navigateToHome();
+      if (success) {
+        _navigateToHome();
+      } else {
+        _showErrorSnack(authViewModel.errorMessage ?? 'Sign-in failed.');
+      }
     }
   }
 
@@ -165,32 +165,35 @@ class _AuthScreenState extends State<AuthScreen>
     if (!_registerFormKey.currentState!.validate()) return;
     HapticFeedback.mediumImpact();
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1400));
+
+    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+    final success = await authViewModel.register(
+      _registerNameCtrl.text.trim(),
+      _registerEmailCtrl.text.trim(),
+      _registerPasswordCtrl.text,
+    );
+
     if (mounted) {
       setState(() => _isLoading = false);
-      
-      // Show success message and switch to Sign In tab
-      _showSuccessSnack('Account created successfully! Please sign in.');
-      
-      // Clear the registration form
-      _registerNameCtrl.clear();
-      _registerUsernameCtrl.clear();
-      _registerPasswordCtrl.clear();
-      _registerConfirmCtrl.clear();
-      
-      // Switch to Sign In tab
-      _switchTab(true);
+      if (success) {
+        _showSuccessSnack('Account created! Please sign in.');
+        _registerNameCtrl.clear();
+        _registerEmailCtrl.clear();
+        _registerPasswordCtrl.clear();
+        _registerConfirmCtrl.clear();
+        _switchTab(true);
+      } else {
+        _showErrorSnack(authViewModel.errorMessage ?? 'Registration failed.');
+      }
     }
   }
 
-  // ── Forgot Password ─────────────────────────────────────────────
+  // ── Forgot Password ────────────────────────────────────────────
   Future<void> _handleForgotPassword() async {
     HapticFeedback.lightImpact();
-    
-    // Show email input dialog
     final emailController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -201,27 +204,25 @@ class _AuthScreenState extends State<AuthScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Enter your username and we\'ll send you instructions to reset your password.',
+                'Enter your email and we\'ll send you instructions to reset your password.',
                 style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
               ),
               const SizedBox(height: 20),
               TextFormField(
                 controller: emailController,
-                keyboardType: TextInputType.text,
+                keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
-                  labelText: 'Username',
-                  hintText: 'Enter your username',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  labelText: 'Email',
+                  hintText: 'Enter your email',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: AppColors.primary, width: 2),
                   ),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter your username';
-                  if (value.length < 3) return 'Username must be at least 3 characters';
+                  if (value == null || value.isEmpty) return 'Please enter your email';
+                  if (!value.contains('@')) return 'Please enter a valid email';
                   return null;
                 },
               ),
@@ -231,59 +232,23 @@ class _AuthScreenState extends State<AuthScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: AppTypography.button.copyWith(color: AppColors.onSurfaceMuted)),
+            child: Text('Cancel',
+                style: AppTypography.button.copyWith(color: AppColors.onSurfaceMuted)),
           ),
           ElevatedButton(
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
               Navigator.of(context).pop();
-              
-              // Store context before async operation
-              final scaffoldContext = context;
-              
-              // Show loading and success message
-              ScaffoldMessenger.of(scaffoldContext).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      ),
-                      const SizedBox(width: 12),
-                      Text('Sending reset instructions...', style: AppTypography.body2.copyWith(color: Colors.white)),
-                    ],
-                  ),
-                  backgroundColor: AppColors.primary,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  margin: const EdgeInsets.all(16),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-              
-              // Simulate API call
-              await Future.delayed(const Duration(seconds: 2));
-              
+
+              final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+              final success = await authViewModel.resetPassword(emailController.text.trim());
+
               if (mounted) {
-                ScaffoldMessenger.of(scaffoldContext).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: [
-                        const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-                        const SizedBox(width: 10),
-                        Text('Reset instructions sent to ${emailController.text}', 
-                             style: AppTypography.body2.copyWith(color: Colors.white)),
-                      ],
-                    ),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    margin: const EdgeInsets.all(16),
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
+                if (success) {
+                  _showSuccessSnack('Reset link sent! Check your inbox.');
+                } else {
+                  _showErrorSnack(authViewModel.errorMessage ?? 'Could not send reset email.');
+                }
               }
             },
             style: ElevatedButton.styleFrom(
@@ -302,9 +267,9 @@ class _AuthScreenState extends State<AuthScreen>
     HapticFeedback.lightImpact();
     final opening = !_showGooglePanel;
     setState(() {
-      _showGooglePanel   = opening;
-      _googleUsernameError  = false;
-      _googleUsernameErrText = '';
+      _showGooglePanel  = opening;
+      _googleEmailError = false;
+      _googleEmailErrText = '';
     });
     if (opening) {
       _googlePanelAnim.forward();
@@ -312,53 +277,73 @@ class _AuthScreenState extends State<AuthScreen>
           () { if (mounted) _googleFocusNode.requestFocus(); });
     } else {
       _googlePanelAnim.reverse();
-      _googleUsernameCtrl.clear();
+      _googleEmailCtrl.clear();
     }
   }
 
   Future<void> _handleGoogleContinue() async {
-    final username = _googleUsernameCtrl.text.trim();
-    if (username.isEmpty) {
+    final email = _googleEmailCtrl.text.trim();
+    if (email.isEmpty) {
       setState(() {
-        _googleUsernameError   = true;
-        _googleUsernameErrText = 'Please enter your username.';
+        _googleEmailError   = true;
+        _googleEmailErrText = 'Please enter your email.';
       });
       return;
     }
-    if (username.length < 3) {
+    if (!email.contains('@')) {
       setState(() {
-        _googleUsernameError   = true;
-        _googleUsernameErrText = 'Username must be at least 3 characters.';
+        _googleEmailError   = true;
+        _googleEmailErrText = 'Please enter a valid email address.';
       });
       return;
     }
-    setState(() { _googleUsernameError = false; _isGoogleLoading = true; });
-    await Future.delayed(const Duration(milliseconds: 1400));
+    setState(() { _googleEmailError = false; _isGoogleLoading = true; });
+
+    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+    final success = await authViewModel.signInWithGoogle(email);
+
     if (!mounted) return;
     setState(() => _isGoogleLoading = false);
-    
-    // Create user from Google sign-in
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final name = username;
-    userProvider.createSampleUser(name);
-    
-    _showSuccessSnack('Signed in with Google!');
-    Future.delayed(const Duration(milliseconds: 500),
-        () { if (mounted) _navigateToHome(); });
+
+    if (success) {
+      _showSuccessSnack('Signed in with Google!');
+      Future.delayed(const Duration(milliseconds: 500),
+          () { if (mounted) _navigateToHome(); });
+    } else {
+      _showErrorSnack(authViewModel.errorMessage ?? 'Google sign-in failed.');
+    }
   }
 
+  // ── Snack bars ─────────────────────────────────────────────────
   void _showSuccessSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Row(children: [
         const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
         const SizedBox(width: 10),
-        Text(msg, style: AppTypography.body2.copyWith(color: Colors.white)),
+        Flexible(child: Text(msg,
+            style: AppTypography.body2.copyWith(color: Colors.white))),
       ]),
       backgroundColor: AppColors.success,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 2),
+    ));
+  }
+
+  void _showErrorSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Row(children: [
+        const Icon(Icons.error_outline_rounded, color: Colors.white, size: 18),
+        const SizedBox(width: 10),
+        Flexible(child: Text(msg,
+            style: AppTypography.body2.copyWith(color: Colors.white))),
+      ]),
+      backgroundColor: AppColors.error,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      margin: const EdgeInsets.all(16),
+      duration: const Duration(seconds: 3),
     ));
   }
 
@@ -434,7 +419,7 @@ class _AuthScreenState extends State<AuthScreen>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: RadialGradient(colors: [
-              AppColors.primary.withValues(alpha:0.16), Colors.transparent,
+              AppColors.primary.withValues(alpha: 0.16), Colors.transparent,
             ]),
           ),
         ),
@@ -445,7 +430,7 @@ class _AuthScreenState extends State<AuthScreen>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: RadialGradient(colors: [
-              AppColors.secondary.withValues(alpha:0.12), Colors.transparent,
+              AppColors.secondary.withValues(alpha: 0.12), Colors.transparent,
             ]),
           ),
         ),
@@ -456,7 +441,7 @@ class _AuthScreenState extends State<AuthScreen>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: RadialGradient(colors: [
-              AppColors.accent.withValues(alpha:0.10), Colors.transparent,
+              AppColors.accent.withValues(alpha: 0.10), Colors.transparent,
             ]),
           ),
         ),
@@ -467,7 +452,6 @@ class _AuthScreenState extends State<AuthScreen>
   // ─── Header ───────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Column(children: [
-      // App icon — large rounded square with lotus, matching your screenshot
       Container(
         width: 82, height: 82,
         decoration: BoxDecoration(
@@ -475,7 +459,7 @@ class _AuthScreenState extends State<AuthScreen>
           borderRadius: BorderRadius.circular(26),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha:0.42),
+              color: AppColors.primary.withValues(alpha: 0.42),
               blurRadius: 28,
               offset: const Offset(0, 12),
             ),
@@ -511,7 +495,6 @@ class _AuthScreenState extends State<AuthScreen>
             offset: const Offset(0, 3))],
       ),
       child: Stack(children: [
-        // Animated gradient pill
         AnimatedBuilder(
           animation: _pillPos,
           builder: (context, child) => LayoutBuilder(
@@ -525,7 +508,7 @@ class _AuthScreenState extends State<AuthScreen>
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [BoxShadow(
-                      color: AppColors.primary.withValues(alpha:0.28),
+                      color: AppColors.primary.withValues(alpha: 0.28),
                       blurRadius: 12, offset: const Offset(0, 4))],
                   ),
                 ),
@@ -533,7 +516,6 @@ class _AuthScreenState extends State<AuthScreen>
             },
           ),
         ),
-        // Labels
         Row(children: [
           Expanded(child: GestureDetector(
             onTap: () => _switchTab(true),
@@ -570,17 +552,14 @@ class _AuthScreenState extends State<AuthScreen>
       key: _loginFormKey,
       child: Column(children: [
         _buildFieldGroup(
-          controller: _loginUsernameCtrl,
-          label: 'Username',
-          hint: 'Enter your username',
-          icon: Icons.person_outline_rounded,
+          controller: _loginEmailCtrl,
+          label: 'Email',
+          hint: 'Enter your email',
+          icon: Icons.email_outlined,
+          keyboardType: TextInputType.emailAddress,
           validator: (v) {
-            if (v == null || v.trim().isEmpty) {
-              return 'Please enter your username';
-            }
-            if (v.trim().length < 3) {
-              return 'Username must be at least 3 characters';
-            }
+            if (v == null || v.trim().isEmpty) return 'Please enter your email';
+            if (!v.contains('@')) return 'Please enter a valid email';
             return null;
           },
         ),
@@ -603,15 +582,13 @@ class _AuthScreenState extends State<AuthScreen>
         const SizedBox(height: 16),
         Row(
           children: [
-            // Remember me checkbox
             GestureDetector(
               onTap: () => setState(() => _rememberMe = !_rememberMe),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 20,
-                    height: 20,
+                    width: 20, height: 20,
                     decoration: BoxDecoration(
                       color: _rememberMe ? AppColors.primary : Colors.transparent,
                       borderRadius: BorderRadius.circular(4),
@@ -632,7 +609,6 @@ class _AuthScreenState extends State<AuthScreen>
               ),
             ),
             const Spacer(),
-            // Forgot password link
             TextButton(
               onPressed: _handleForgotPassword,
               style: TextButton.styleFrom(
@@ -669,17 +645,14 @@ class _AuthScreenState extends State<AuthScreen>
         ),
         const SizedBox(height: 16),
         _buildFieldGroup(
-          controller: _registerUsernameCtrl,
-          label: 'Username',
-          hint: 'Enter your username',
-          icon: Icons.person_outline_rounded,
+          controller: _registerEmailCtrl,
+          label: 'Email',
+          hint: 'Enter your email',
+          icon: Icons.email_outlined,
+          keyboardType: TextInputType.emailAddress,
           validator: (v) {
-            if (v == null || v.trim().isEmpty) {
-              return 'Please enter your username';
-            }
-            if (v.trim().length < 3) {
-              return 'Username must be at least 3 characters';
-            }
+            if (v == null || v.trim().isEmpty) return 'Please enter your email';
+            if (!v.contains('@')) return 'Please enter a valid email';
             return null;
           },
         ),
@@ -695,7 +668,7 @@ class _AuthScreenState extends State<AuthScreen>
               setState(() => _registerPassVisible = !_registerPassVisible),
           validator: (v) {
             if (v == null || v.isEmpty) return 'Please enter a password';
-            if (v.length < 6) return 'Password must be at least 6 characters';
+            if (v.length < 8) return 'Password must be at least 8 characters';
             return null;
           },
         ),
@@ -748,8 +721,8 @@ class _AuthScreenState extends State<AuthScreen>
           decoration: BoxDecoration(
             boxShadow: [BoxShadow(
               color: hasError
-                  ? AppColors.error.withValues(alpha:0.08)
-                  : AppColors.primary.withValues(alpha:0.06),
+                  ? AppColors.error.withValues(alpha: 0.08)
+                  : AppColors.primary.withValues(alpha: 0.06),
               blurRadius: 14, offset: const Offset(0, 4))],
           ),
           child: TextFormField(
@@ -804,7 +777,7 @@ class _AuthScreenState extends State<AuthScreen>
         borderRadius: BorderRadius.circular(18),
         gradient: AppColors.primaryGradient,
         boxShadow: [BoxShadow(
-          color: AppColors.primary.withValues(alpha:0.42),
+          color: AppColors.primary.withValues(alpha: 0.42),
           blurRadius: 22, offset: const Offset(0, 9))],
       ),
       child: ElevatedButton(
@@ -860,7 +833,7 @@ class _AuthScreenState extends State<AuthScreen>
           ),
           boxShadow: [BoxShadow(
             color: _showGooglePanel
-                ? AppColors.primary.withValues(alpha:0.12)
+                ? AppColors.primary.withValues(alpha: 0.12)
                 : AppColors.shadowSoft,
             blurRadius: _showGooglePanel ? 18 : 10,
             offset: const Offset(0, 3))],
@@ -901,7 +874,7 @@ class _AuthScreenState extends State<AuthScreen>
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
         boxShadow: [BoxShadow(
-          color: AppColors.primary.withValues(alpha:0.07),
+          color: AppColors.primary.withValues(alpha: 0.07),
           blurRadius: 20, offset: const Offset(0, 6))],
       ),
       child: Column(
@@ -915,24 +888,22 @@ class _AuthScreenState extends State<AuthScreen>
                     .copyWith(color: AppColors.onSurface)),
           ]),
           const SizedBox(height: 6),
-          Text('Enter the username linked to your Google account.',
+          Text('Enter the email linked to your Google account.',
               style: AppTypography.body2
                   .copyWith(color: AppColors.onSurfaceMuted)),
           const SizedBox(height: 16),
-          // Email field (plain TextField — not FormField, separate panel)
-          _buildGoogleUsernameField(),
-          // Error
+          _buildGoogleEmailField(),
           AnimatedSize(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,
-            child: _googleUsernameError
+            child: _googleEmailError
                 ? Padding(
                     padding: const EdgeInsets.only(top: 8, left: 4),
                     child: Row(children: [
                       const Icon(Icons.error_outline_rounded,
                           size: 14, color: AppColors.error),
                       const SizedBox(width: 6),
-                      Flexible(child: Text(_googleUsernameErrText,
+                      Flexible(child: Text(_googleEmailErrText,
                           style: AppTypography.caption
                               .copyWith(color: AppColors.error))),
                     ]),
@@ -940,10 +911,8 @@ class _AuthScreenState extends State<AuthScreen>
                 : const SizedBox.shrink(),
           ),
           const SizedBox(height: 16),
-          // Continue button
           _buildGoogleContinueButton(),
           const SizedBox(height: 14),
-          // Security note
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
@@ -954,7 +923,7 @@ class _AuthScreenState extends State<AuthScreen>
             child: Row(children: [
               Icon(Icons.lock_outline_rounded,
                   size: 15,
-                  color: AppColors.primary.withValues(alpha:0.7)),
+                  color: AppColors.primary.withValues(alpha: 0.7)),
               const SizedBox(width: 8),
               Expanded(child: Text(
                   "We'll verify your Google account securely. Your data is safe.",
@@ -967,33 +936,33 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  Widget _buildGoogleUsernameField() {
+  Widget _buildGoogleEmailField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text('Username',
+          child: Text('Email',
               style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.onSurface, fontWeight: FontWeight.w600)),
         ),
         Container(
           decoration: BoxDecoration(
             boxShadow: [BoxShadow(
-              color: _googleUsernameError
-                  ? AppColors.error.withValues(alpha:0.08)
-                  : AppColors.primary.withValues(alpha:0.06),
+              color: _googleEmailError
+                  ? AppColors.error.withValues(alpha: 0.08)
+                  : AppColors.primary.withValues(alpha: 0.06),
               blurRadius: 14, offset: const Offset(0, 4))],
           ),
           child: TextField(
-            controller: _googleUsernameCtrl,
+            controller: _googleEmailCtrl,
             focusNode: _googleFocusNode,
-            keyboardType: TextInputType.text,
+            keyboardType: TextInputType.emailAddress,
             onSubmitted: (_) => _handleGoogleContinue(),
             style: AppTypography.input.copyWith(color: AppColors.onSurface),
             decoration: InputDecoration(
-              hintText: 'username',
-              enabledBorder: _googleUsernameError
+              hintText: 'your@email.com',
+              enabledBorder: _googleEmailError
                   ? OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: const BorderSide(
@@ -1001,8 +970,8 @@ class _AuthScreenState extends State<AuthScreen>
                   : null,
               prefixIcon: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Icon(Icons.person_outline_rounded, size: 20,
-                    color: _googleUsernameError
+                child: Icon(Icons.email_outlined, size: 20,
+                    color: _googleEmailError
                         ? AppColors.error : AppColors.onSurfaceMuted),
               ),
               prefixIconConstraints:
@@ -1022,7 +991,7 @@ class _AuthScreenState extends State<AuthScreen>
         height: 54,
         decoration: BoxDecoration(
           color: _isGoogleLoading
-              ? AppColors.primary.withValues(alpha:0.85)
+              ? AppColors.primary.withValues(alpha: 0.85)
               : const Color(0xFFF0ECFF),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
@@ -1072,7 +1041,9 @@ class _AuthScreenState extends State<AuthScreen>
             offset: const Offset(0, 3))],
       ),
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: () {
+          _showErrorSnack('Facebook sign-in is not available yet.');
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
@@ -1110,7 +1081,7 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  // ─── Guest button ────────────────────────────────────────────────
+  // ─── Guest button ─────────────────────────────────────────────────
   Widget _buildGuestButton() {
     return Container(
       height: 56,
@@ -1118,13 +1089,11 @@ class _AuthScreenState extends State<AuthScreen>
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE8E3FF), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowSoft,
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: [BoxShadow(
+          color: AppColors.shadowSoft,
+          blurRadius: 10,
+          offset: const Offset(0, 3),
+        )],
       ),
       child: Material(
         color: Colors.transparent,
@@ -1137,14 +1106,11 @@ class _AuthScreenState extends State<AuthScreen>
               Container(
                 width: 22, height: 22,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha:0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(
-                  Icons.person_outline_rounded,
-                  color: AppColors.primary,
-                  size: 16,
-                ),
+                child: Icon(Icons.person_outline_rounded,
+                    color: AppColors.primary, size: 16),
               ),
               const SizedBox(width: 12),
               Text('Continue as Guest',

@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "204314257371",
+    "firebase_url": "https://zenrova-app-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "zenrova-app",
+    "storage_bucket": "zenrova-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:204314257371:android:2ca9ec469026404c7769fe",
+        "android_client_info": {
+          "package_name": "com.example.zenrova"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "204314257371-sj0tab68br18sseiv01oan8379c5igq9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFJwFaHuqMlfG5Buj816JfkSkg8-1f5_g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "204314257371-sj0tab68br18sseiv01oan8379c5igq9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

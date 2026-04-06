@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'app.dart';
 import 'core/providers/user_provider.dart';
 import 'core/config/firebase_config.dart';
+import 'features/auth/auth_view_model.dart';
 
 /// Zenrova — Entry Point
 /// "Your light through the dark."
@@ -38,8 +39,11 @@ Future<void> main() async {
 
   // Launch the app
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => UserProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => AuthViewModel()),
+      ],
       child: const ZenrovaApp(),
     ),
   );

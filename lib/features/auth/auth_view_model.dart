@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/helpers.dart';
+import '../../services/firebase_auth_service.dart';
 
 /// AuthViewModel — Zenrova
 /// Manages all authentication state for the app.
@@ -45,7 +46,6 @@ class AuthViewModel extends ChangeNotifier {
 
   // ── Sign in ────────────────────────────────────────────────────
   Future<bool> signIn(String email, String password) async {
-    // Client-side validation using Helpers
     if (email.trim().isEmpty) {
       _setError('Please enter your email address.');
       return false;
@@ -65,19 +65,15 @@ class AuthViewModel extends ChangeNotifier {
 
     _setLoading(true);
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
-
-      _currentUserEmail = email.trim();
+      final FirebaseAuthService authService = FirebaseAuthService();
+      final credential = await authService.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+      _currentUserEmail = credential.user?.email;
       _isAuthenticated = true;
       _setSuccess('Welcome back to Zenrova!');
       return true;
-
-      // TODO: Replace with Firebase:
-      // final credential = await FirebaseAuth.instance
-      //     .signInWithEmailAndPassword(email: email, password: password);
-      // _currentUserEmail = credential.user?.email;
-      // _isAuthenticated = true;
     } catch (e) {
       _setError('Sign-in failed. Please check your credentials and try again.');
       return false;
@@ -103,9 +99,13 @@ class AuthViewModel extends ChangeNotifier {
 
     _setLoading(true);
     try {
-      await Future.delayed(const Duration(seconds: 2));
-
-      _currentUserEmail = email.trim();
+      final FirebaseAuthService authService = FirebaseAuthService();
+      final credential = await authService.registerWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+        displayName: name.trim(),
+      );
+      _currentUserEmail = credential.user?.email;
       _isAuthenticated = true;
       _setSuccess('Welcome to Zenrova, ${Helpers.truncateText(name.trim(), 20)}!');
       return true;
@@ -126,7 +126,8 @@ class AuthViewModel extends ChangeNotifier {
 
     _setLoading(true);
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final FirebaseAuthService authService = FirebaseAuthService();
+      await authService.resetPassword(email.trim());
       _setSuccess('Reset link sent to ${email.trim()}. Check your inbox.');
       return true;
     } catch (e) {
@@ -137,7 +138,7 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  // ── Google sign-in ─────────────────────────────────────────────
+  // ── Google sign-in (not yet implemented) ───────────────────────
   Future<bool> signInWithGoogle(String googleEmail) async {
     if (!Helpers.isValidEmail(googleEmail.trim())) {
       _setError('Please enter a valid email address.');
@@ -147,20 +148,10 @@ class AuthViewModel extends ChangeNotifier {
     _setLoading(true);
     try {
       await Future.delayed(const Duration(milliseconds: 1500));
-
       _currentUserEmail = googleEmail.trim();
       _isAuthenticated = true;
       _setSuccess('Signed in with Google successfully!');
       return true;
-
-      // TODO: Replace with actual Google Sign-In:
-      // final googleUser = await GoogleSignIn().signIn();
-      // final googleAuth = await googleUser?.authentication;
-      // final credential = GoogleAuthProvider.credential(
-      //   accessToken: googleAuth?.accessToken,
-      //   idToken: googleAuth?.idToken,
-      // );
-      // await FirebaseAuth.instance.signInWithCredential(credential);
     } catch (e) {
       _setError('Google sign-in failed. Please try again.');
       return false;
@@ -181,7 +172,7 @@ class AuthViewModel extends ChangeNotifier {
     _isAuthenticated = false;
     _currentUserEmail = null;
     clearMessages();
-    // TODO: FirebaseAuth.instance.signOut();
+    await FirebaseAuthService().signOut();
   }
 
   // ── Helpers ────────────────────────────────────────────────────
