@@ -4,8 +4,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/providers/user_provider.dart';
 import '../auth/auth_screen.dart';
-import '../admin/admin_login_screen.dart';
 import '../admin/admin_dashboard_screen.dart';
+// AdminLoginScreen import removed — regular users never navigate there from profile
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,7 +18,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _emailController;
-  
+
   @override
   void initState() {
     super.initState();
@@ -37,8 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      
-      // Show loading indicator
+
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -47,25 +46,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
 
-      // Simulate API call
       await Future.delayed(const Duration(seconds: 1));
 
-      // Close loading indicator
       if (mounted) {
         Navigator.of(context).pop();
       }
 
-      // Update user
       userProvider.updateUser(displayName: _nameController.text);
-      
-      // Show success message
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Profile updated successfully!'),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             margin: const EdgeInsets.all(16),
           ),
         );
@@ -85,12 +81,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: AppColors.onSurface),
+              icon: const Icon(Icons.arrow_back_rounded,
+                  color: AppColors.onSurface),
               onPressed: () => Navigator.of(context).pop(),
             ),
             title: Text(
               'Profile',
-              style: AppTypography.heading3.copyWith(color: AppColors.onSurface),
+              style:
+                  AppTypography.heading3.copyWith(color: AppColors.onSurface),
             ),
             actions: [
               TextButton(
@@ -111,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                
+
                 // Profile Avatar
                 Stack(
                   children: [
@@ -172,9 +170,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: IconButton(
                           icon: const Icon(Icons.camera_alt_outlined, size: 18),
                           onPressed: () {
-                            // TODO: Implement image picker
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Image picker coming soon!')),
+                              const SnackBar(
+                                  content:
+                                      Text('Image picker coming soon!')),
                             );
                           },
                         ),
@@ -182,15 +181,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 30),
-                
+
                 // Profile Form
                 Form(
                   key: _formKey,
                   child: Column(
                     children: [
-                      // Name Field
                       _buildProfileField(
                         controller: _nameController,
                         label: 'Display Name',
@@ -206,10 +204,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           return null;
                         },
                       ),
-                      
                       const SizedBox(height: 20),
-                      
-                      // Email Field (read-only for now)
                       _buildProfileField(
                         controller: _emailController,
                         label: 'Email',
@@ -221,17 +216,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Account Settings
-                _buildSettingsSection(),
-                
+                _buildSettingsSection(userProvider),
+
                 const SizedBox(height: 30),
-                
+
                 // Logout Button
                 _buildLogoutButton(),
-                
+
                 const SizedBox(height: 20),
               ],
             ),
@@ -271,15 +266,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             hintText: hint,
             prefixIcon: Icon(
               icon,
-              color: enabled ? AppColors.onSurfaceMuted : AppColors.onSurfaceMuted.withValues(alpha: 0.5),
+              color: enabled
+                  ? AppColors.onSurfaceMuted
+                  : AppColors.onSurfaceMuted.withValues(alpha: 0.5),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: AppColors.onSurfaceMuted.withValues(alpha: 0.3)),
+              borderSide: BorderSide(
+                  color: AppColors.onSurfaceMuted.withValues(alpha: 0.3)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: AppColors.onSurfaceMuted.withValues(alpha: 0.3)),
+              borderSide: BorderSide(
+                  color: AppColors.onSurfaceMuted.withValues(alpha: 0.3)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
@@ -287,7 +286,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: AppColors.onSurfaceMuted.withValues(alpha: 0.2)),
+              borderSide: BorderSide(
+                  color: AppColors.onSurfaceMuted.withValues(alpha: 0.2)),
             ),
             filled: true,
             fillColor: enabled ? Colors.white : AppColors.surfaceElevated,
@@ -297,7 +297,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSettingsSection() {
+  /// Settings section — admin tile is ONLY shown to users where isAdmin == true.
+  /// Regular users see no admin-related option at all.
+  Widget _buildSettingsSection(UserProvider userProvider) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -330,38 +332,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // TODO: Implement privacy settings
             },
           ),
-          _buildDivider(),
-          Consumer<UserProvider>(
-            builder: (context, userProvider, child) {
-              if (userProvider.isAdmin) {
-                return _buildSettingsTile(
-                  icon: Icons.admin_panel_settings_outlined,
-                  title: 'Admin Dashboard',
-                  subtitle: 'Manage users and view analytics',
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const AdminDashboardScreen(),
-                      ),
-                    );
-                  },
+
+          // ── ADMIN TILE: only visible to admin users ──────────────
+          if (userProvider.isAdmin) ...[
+            _buildDivider(),
+            _buildSettingsTile(
+              icon: Icons.admin_panel_settings_outlined,
+              title: 'Admin Dashboard',
+              subtitle: 'Manage users and view analytics',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const AdminDashboardScreen(),
+                  ),
                 );
-              } else {
-                return _buildSettingsTile(
-                  icon: Icons.admin_panel_settings_outlined,
-                  title: 'Admin Login',
-                  subtitle: 'Access administrative controls',
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const AdminLoginScreen(),
-                      ),
-                    );
-                  },
-                );
-              }
-            },
-          ),
+              },
+            ),
+          ],
+          // ── END ADMIN TILE ───────────────────────────────────────
+
           _buildDivider(),
           _buildSettingsTile(
             icon: Icons.help_outline,
@@ -444,11 +433,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    Provider.of<UserProvider>(context, listen: false).clearUser();
+                    Provider.of<UserProvider>(context, listen: false)
+                        .clearUser();
                     Navigator.of(context).pushAndRemoveUntil(
                       PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) => const AuthScreen(),
-                        transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(
+                        pageBuilder:
+                            (context, animation, secondaryAnimation) =>
+                                const AuthScreen(),
+                        transitionsBuilder:
+                            (context, animation, secondaryAnimation, child) =>
+                                FadeTransition(
                           opacity: animation,
                           child: child,
                         ),
