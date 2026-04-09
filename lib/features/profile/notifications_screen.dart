@@ -50,7 +50,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Notification preferences saved!'),
-        backgroundColor: AppColors.success,
+        backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -272,12 +272,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2D3748).withValues(alpha: 0.3) : const Color(0xFFEDE9FF), width: 1.5),
         boxShadow: [
           BoxShadow(
-              color: AppColors.shadowSoft,
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.black.withValues(alpha: 0.1) : AppColors.shadowSoft,
               blurRadius: 8,
               offset: const Offset(0, 2))
         ],
@@ -341,16 +341,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Row(
           children: [
             Icon(Icons.schedule_rounded,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), size: 18),
+                color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFFFFFFF).withValues(alpha: 0.6) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), size: 18),
             const SizedBox(width: 10),
             Text('Reminder time',
-                style: AppTypography.body2
-                    .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                style: Theme.of(context).brightness == Brightness.dark 
+                    ? AppTypography.body2.copyWith(color: const Color(0xFFFFFFFF).withValues(alpha: 0.6)) 
+                    : AppTypography.body2.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
             const Spacer(),
             Text(time,
-                style: AppTypography.body2.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w600)),
+                style: Theme.of(context).brightness == Brightness.dark ? AppTypography.body2.copyWith(color: const Color(0xFFFFFFFF)) : AppTypography.body2.copyWith(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600)),
             const SizedBox(width: 4),
             Icon(Icons.chevron_right_rounded,
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), size: 18),

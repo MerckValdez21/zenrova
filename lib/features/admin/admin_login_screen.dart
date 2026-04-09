@@ -79,7 +79,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -95,12 +95,12 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
+                    border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2D3748).withValues(alpha: 0.3) : const Color(0xFFEDE9FF), width: 1.5),
                   ),
-                  child: const Icon(Icons.arrow_back_rounded,
-                      color: AppColors.onSurface, size: 20),
+                  child: Icon(Icons.arrow_back_rounded,
+                      color: Theme.of(context).colorScheme.onSurface, size: 20),
                 ),
               ),
 
@@ -131,14 +131,14 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
               Text(
                 'Admin Login',
-                style: AppTypography.heading1.copyWith(color: AppColors.onSurface),
+                style: AppTypography.heading1.copyWith(color: Theme.of(context).colorScheme.onSurface),
               ),
 
               const SizedBox(height: 8),
 
               Text(
                 'Sign in to access administrative controls.',
-                style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
+                style: AppTypography.body2.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
               ),
 
               const SizedBox(height: 40),
@@ -149,18 +149,18 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                style: AppTypography.body1.copyWith(color: AppColors.onSurface),
+                style: AppTypography.body1.copyWith(color: Theme.of(context).colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Enter admin email',
-                  prefixIcon: const Icon(Icons.email_outlined,
-                      color: AppColors.onSurfaceMuted),
+                  prefixIcon: Icon(Icons.email_outlined,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
-                        color: Color(0xFFE0D9FF), width: 1.5),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2D3748).withValues(alpha: 0.3) : const Color(0xFFE0D9FF), width: 1.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -168,7 +168,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                         const BorderSide(color: AppColors.primary, width: 2),
                   ),
                   filled: true,
-                  fillColor: AppColors.surface,
+                  fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1A202C).withValues(alpha: 0.5) : Theme.of(context).colorScheme.surface,
                 ),
               ),
 
@@ -179,18 +179,18 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
-                style: AppTypography.body1.copyWith(color: AppColors.onSurface),
+                style: AppTypography.body1.copyWith(color: Theme.of(context).colorScheme.onSurface),
                 onSubmitted: (_) => _loginAsAdmin(),
                 decoration: InputDecoration(
                   hintText: 'Enter admin password',
-                  prefixIcon: const Icon(Icons.lock_outline,
-                      color: AppColors.onSurfaceMuted),
+                  prefixIcon: Icon(Icons.lock_outline,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
-                      color: AppColors.onSurfaceMuted,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       size: 20,
                     ),
                     onPressed: () =>
@@ -201,8 +201,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                       borderSide: BorderSide.none),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
-                        color: Color(0xFFE0D9FF), width: 1.5),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2D3748).withValues(alpha: 0.3) : const Color(0xFFE0D9FF), width: 1.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -210,7 +210,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                         const BorderSide(color: AppColors.primary, width: 2),
                   ),
                   filled: true,
-                  fillColor: AppColors.surface,
+                  fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1A202C).withValues(alpha: 0.5) : Theme.of(context).colorScheme.surface,
                 ),
               ),
 
@@ -260,7 +260,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     return Text(
       text,
       style: AppTypography.bodyMedium.copyWith(
-          color: AppColors.onSurface, fontWeight: FontWeight.w600),
+          color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600),
     );
   }
 }

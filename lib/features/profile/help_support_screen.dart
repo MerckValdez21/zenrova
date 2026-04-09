@@ -184,7 +184,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   }
 
   Widget _buildContactCard({
-    required IconData icon,
+    IconData? icon,
     required String label,
     required String subtitle,
     required Color color,
@@ -197,7 +197,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
           boxShadow: [
@@ -215,7 +215,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               height: 40,
               decoration: BoxDecoration(
                   color: bg, borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: color, size: 20),
+              child: icon != null ? Icon(icon, color: color, size: 20) : Container(),
             ),
             const SizedBox(height: 12),
             Text(label,
@@ -225,7 +225,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             const SizedBox(height: 2),
             Text(subtitle,
                 style: AppTypography.caption
-                    .copyWith(color: AppColors.onSurfaceMuted)),
+                    .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
           ],
         ),
       ),
@@ -233,7 +233,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   }
 
   Widget _buildContactRow({
-    required IconData icon,
+    IconData? icon,
     required String label,
     required String subtitle,
     required Color color,
@@ -246,7 +246,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
           boxShadow: [
@@ -263,7 +263,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               height: 42,
               decoration: BoxDecoration(
                   color: bg, borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: color, size: 20),
+              child: icon != null ? Icon(icon, color: color, size: 20) : Container(),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -272,16 +272,16 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 children: [
                   Text(label,
                       style: AppTypography.body1.copyWith(
-                          color: AppColors.onSurface,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w600)),
                   Text(subtitle,
                       style: AppTypography.body2
-                          .copyWith(color: AppColors.onSurfaceMuted)),
+                          .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.onSurfaceMuted, size: 20),
+            Icon(Icons.chevron_right_rounded,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), size: 20),
           ],
         ),
       ),
@@ -294,7 +294,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isExpanded
@@ -332,19 +332,31 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                           : const Color(0xFFF0EEFF),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
-                      isExpanded
-                          ? Icons.remove_rounded
-                          : Icons.add_rounded,
-                      color: AppColors.primary,
-                      size: 16,
+                    child: Row(
+                      children: [
+                        Icon(
+                          isExpanded
+                              ? Icons.remove_rounded
+                              : Icons.add_rounded,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isExpanded ? '-' : '+',
+                          style: AppTypography.body2.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(faq.question,
                         style: AppTypography.body1.copyWith(
-                            color: AppColors.onSurface,
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w600)),
                   ),
                 ],
@@ -355,7 +367,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   padding: const EdgeInsets.only(left: 40),
                   child: Text(faq.answer,
                       style: AppTypography.body2.copyWith(
-                          color: AppColors.onSurfaceMuted,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                           height: 1.6)),
                 ),
               ],
@@ -376,8 +388,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
         padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
             borderRadius:
                 BorderRadius.vertical(top: Radius.circular(28)),
           ),
@@ -400,36 +412,43 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               const SizedBox(height: 20),
               Text(title,
                   style: AppTypography.heading3
-                      .copyWith(color: AppColors.onSurface)),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 6),
               Text('Sending to: $email',
                   style: AppTypography.body2
-                      .copyWith(color: AppColors.onSurfaceMuted)),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
               const SizedBox(height: 20),
               TextField(
                 controller: messageCtrl,
                 maxLines: 5,
                 style: AppTypography.body1
-                    .copyWith(color: AppColors.onSurface),
+                    .copyWith(color: Theme.of(context).colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Describe your issue or question...',
                   hintStyle: AppTypography.body2.copyWith(
-                      color: AppColors.onSurfaceMuted
-                          .withValues(alpha: 0.7)),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withValues(alpha: 0.5)
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
                   filled: true,
-                  fillColor: const Color(0xFFF7F5FF),
+                  fillColor: Theme.of(context).brightness == Brightness.dark 
+                      ? const Color(0xFF1A202C).withValues(alpha: 0.8) 
+                      : const Color(0xFFF7F5FF),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                        color: Color(0xFFEDE9FF), width: 1.5),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF4A5568).withValues(alpha: 0.5)
+                            : const Color(0xFFEDE9FF), width: 1.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                        color: AppColors.primary, width: 2),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.primary.withValues(alpha: 0.8)
+                            : AppColors.primary, width: 2),
                   ),
                   contentPadding: const EdgeInsets.all(16),
                 ),

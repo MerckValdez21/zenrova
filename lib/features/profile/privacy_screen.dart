@@ -88,10 +88,9 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
         padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius:
-                BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
           child: Column(
@@ -103,7 +102,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE0D9FF),
+                    color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2D3748).withValues(alpha: 0.3) : const Color(0xFFE0D9FF),
                     borderRadius: BorderRadius.circular(100),
                   ),
                 ),
@@ -157,8 +156,8 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           AppTypography.body1.copyWith(color: Theme.of(context).colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: const Icon(Icons.lock_outline,
-            color: AppColors.onSurfaceMuted),
+        prefixIcon: Icon(Icons.lock_outline,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none),
@@ -173,7 +172,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               const BorderSide(color: AppColors.primary, width: 2),
         ),
         filled: true,
-        fillColor: const Color(0xFFF7F5FF),
+        fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1C1635) : const Color(0xFFF7F5FF),
       ),
     );
   }
@@ -354,12 +353,12 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2D3748).withValues(alpha: 0.3) : const Color(0xFFEDE9FF), width: 1.5),
         boxShadow: [
           BoxShadow(
-              color: AppColors.shadowSoft,
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.black.withValues(alpha: 0.1) : AppColors.shadowSoft,
               blurRadius: 8,
               offset: const Offset(0, 2))
         ],
@@ -416,17 +415,17 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isDestructive
                 ? AppColors.error.withValues(alpha: 0.3)
-                : const Color(0xFFEDE9FF),
+                : Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2D3748).withValues(alpha: 0.3) : const Color(0xFFEDE9FF),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-                color: AppColors.shadowSoft,
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.black.withValues(alpha: 0.1) : AppColors.shadowSoft,
                 blurRadius: 8,
                 offset: const Offset(0, 2))
           ],
@@ -451,17 +450,17 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                       style: AppTypography.body1.copyWith(
                           color: isDestructive
                               ? AppColors.error
-                              : AppColors.onSurface,
+                              : Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w600)),
                   const SizedBox(height: 2),
                   Text(subtitle,
                       style: AppTypography.body2
-                          .copyWith(color: AppColors.onSurfaceMuted)),
+                          .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                 ],
               ),
             ),
             Icon(Icons.chevron_right_rounded,
-                color: AppColors.onSurfaceMuted, size: 20),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), size: 20),
           ],
         ),
       ),
