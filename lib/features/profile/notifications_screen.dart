@@ -69,16 +69,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.onSurface),
+          icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text('Notifications',
-            style: AppTypography.heading3.copyWith(color: AppColors.onSurface)),
+            style: AppTypography.heading3.copyWith(color: Theme.of(context).colorScheme.onSurface)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -97,13 +97,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: Row(
                 children: [
                   Icon(Icons.notifications_active_rounded,
-                      color: AppColors.primary, size: 22),
+                      color: Theme.of(context).colorScheme.primary, size: 22),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Notifications help you stay consistent with your wellness journey.',
                       style: AppTypography.body2
-                          .copyWith(color: AppColors.onSurface),
+                          .copyWith(color: Theme.of(context).colorScheme.onSurface),
                     ),
                   ),
                 ],
@@ -254,7 +254,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Text(
       title,
       style:
-          AppTypography.heading4.copyWith(color: AppColors.onSurface),
+          AppTypography.heading4.copyWith(color: Theme.of(context).brightness == Brightness.dark 
+              ? const Color(0xFFFFFFFF) 
+              : Theme.of(context).colorScheme.onSurface),
     );
   }
 
@@ -302,12 +304,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     children: [
                       Text(title,
                           style: AppTypography.body1
-                              .copyWith(color: AppColors.onSurface,
+                              .copyWith(color: Theme.of(context).colorScheme.onSurface,
                                   fontWeight: FontWeight.w600)),
                       const SizedBox(height: 2),
                       Text(subtitle,
                           style: AppTypography.body2
-                              .copyWith(color: AppColors.onSurfaceMuted)),
+                              .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                     ],
                   ),
                 ),
@@ -338,20 +340,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            const Icon(Icons.schedule_rounded,
-                color: AppColors.onSurfaceMuted, size: 18),
+            Icon(Icons.schedule_rounded,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), size: 18),
             const SizedBox(width: 10),
             Text('Reminder time',
                 style: AppTypography.body2
-                    .copyWith(color: AppColors.onSurfaceMuted)),
+                    .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
             const Spacer(),
             Text(time,
                 style: AppTypography.body2.copyWith(
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w600)),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.onSurfaceMuted, size: 18),
+            Icon(Icons.chevron_right_rounded,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), size: 18),
           ],
         ),
       ),

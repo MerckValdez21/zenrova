@@ -49,8 +49,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
+      builder: (_) => Center(
+        child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
       ),
     );
 
@@ -72,7 +72,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(width: 10),
             Text('Profile updated successfully!'),
           ]),
-          backgroundColor: AppColors.success,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           behavior: SnackBarBehavior.floating,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -89,24 +89,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final user = userProvider.user;
 
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_rounded,
-                  color: AppColors.onSurface),
+                  color: Color(0xFF2D3748)), // Better contrast for light mode
               onPressed: () => Navigator.of(context).pop(),
             ),
             title: Text('Profile',
                 style: AppTypography.heading3
-                    .copyWith(color: AppColors.onSurface)),
+                    .copyWith(color: Theme.of(context).colorScheme.onSurface)),
             actions: [
               TextButton(
                 onPressed: _saveProfile,
                 child: Text('Save',
                     style: AppTypography.button.copyWith(
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600)),
               ),
             ],
@@ -126,11 +126,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       width: 110,
                       height: 110,
                       decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
+                        gradient: LinearGradient(
+                        colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.3),
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -167,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           width: 34,
                           height: 34,
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: Theme.of(context).colorScheme.surface,
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
                             boxShadow: [
@@ -191,13 +194,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Text(
                   userProvider.displayName,
                   style: AppTypography.heading3
-                      .copyWith(color: AppColors.onSurface),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurface),
                 ),
                 if (userProvider.email.isNotEmpty)
                   Text(
                     userProvider.email,
                     style: AppTypography.body2
-                        .copyWith(color: AppColors.onSurfaceMuted),
+                        .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                   ),
 
                 if (userProvider.isAdmin) ...[
@@ -206,7 +209,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
+                      gradient: LinearGradient(
+                        colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight),
                       borderRadius: BorderRadius.circular(100),
                     ),
                     child: Text('ADMIN',
@@ -280,7 +286,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(label,
             style: AppTypography.body2.copyWith(
-                color: AppColors.onSurface, fontWeight: FontWeight.w600)),
+                color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
@@ -288,31 +294,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
           validator: validator,
           style: AppTypography.body1.copyWith(
               color:
-                  enabled ? AppColors.onSurface : AppColors.onSurfaceMuted),
+                  enabled ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: Icon(icon,
                 color: enabled
-                    ? AppColors.onSurfaceMuted
-                    : AppColors.onSurfaceMuted.withValues(alpha: 0.5)),
+                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide(
-                    color: AppColors.onSurfaceMuted.withValues(alpha: 0.3))),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3))),
             enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide(
-                    color: AppColors.onSurfaceMuted.withValues(alpha: 0.3))),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3))),
             focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: const BorderSide(color: AppColors.primary)),
             disabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide(
-                    color: AppColors.onSurfaceMuted.withValues(alpha: 0.2))),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2))),
             filled: true,
             fillColor:
-                enabled ? Colors.white : AppColors.surfaceElevated,
+                enabled ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
           ),
         ),
       ],
@@ -322,9 +328,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildSettingsSection(UserProvider userProvider) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), width: 1.5),
         boxShadow: [
           BoxShadow(
               color: AppColors.shadowSoft,
@@ -411,7 +417,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppColors.primary, size: 20),
+            child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -420,10 +426,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(title,
                     style: AppTypography.body1
-                        .copyWith(color: AppColors.onSurface)),
+                        .copyWith(color: Theme.of(context).colorScheme.onSurface)),
                 Text(subtitle,
                     style: AppTypography.body2
-                        .copyWith(color: AppColors.onSurfaceMuted)),
+                        .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
               ],
             ),
           ),
@@ -451,23 +457,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
           color: AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: AppColors.primary, size: 20),
+        child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
       ),
       title: Text(title,
-          style: AppTypography.body1.copyWith(color: AppColors.onSurface)),
+          style: AppTypography.body1.copyWith(color: Theme.of(context).colorScheme.onSurface)),
       subtitle: Text(subtitle,
           style: AppTypography.body2
-              .copyWith(color: AppColors.onSurfaceMuted)),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded,
-          color: AppColors.onSurfaceMuted, size: 16),
+              .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+      trailing: Icon(Icons.arrow_forward_ios_rounded,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), size: 16),
       onTap: onTap,
     );
   }
 
   Widget _buildDivider() {
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16),
-      child: Divider(height: 1, thickness: 1, color: Color(0xFFEDE9FF)),
+      child: Divider(height: 1, thickness: 1, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
     );
   }
 
@@ -504,8 +510,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.error,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    foregroundColor: Theme.of(context).colorScheme.onError,
                   ),
                   child: const Text('Logout'),
                 ),
@@ -514,14 +520,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         },
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.error,
-          side: BorderSide(color: AppColors.error.withValues(alpha: 0.4)),
+          foregroundColor: Theme.of(context).colorScheme.error,
+          side: BorderSide(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.4)),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16)),
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),
         child: Text('Logout',
-            style: AppTypography.button.copyWith(color: AppColors.error)),
+            style: AppTypography.button.copyWith(color: Theme.of(context).colorScheme.error)),
       ),
     );
   }

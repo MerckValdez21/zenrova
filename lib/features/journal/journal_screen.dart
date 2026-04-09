@@ -184,7 +184,7 @@ class _JournalScreenState extends State<JournalScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           _buildBgOrbs(),
@@ -303,13 +303,13 @@ class _JournalScreenState extends State<JournalScreen>
           Text(
             'Your Private\nSanctuary',
             style: AppTypography.heading1
-                .copyWith(color: AppColors.onSurface, height: 1.15),
+                .copyWith(color: Theme.of(context).colorScheme.onSurface, height: 1.15),
           ),
           const SizedBox(height: 8),
           Text(
             'Express freely. Reflect deeply. Grow quietly.',
             style: AppTypography.body2
-                .copyWith(color: AppColors.onSurfaceMuted),
+                .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
           ),
           const SizedBox(height: 20),
         ],
@@ -425,7 +425,7 @@ class _JournalScreenState extends State<JournalScreen>
           const SizedBox(height: 28),
           Text('Writing prompts to get started',
               style: AppTypography.heading4
-                  .copyWith(color: AppColors.onSurface)),
+                  .copyWith(color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 14),
           ..._prompts.map((p) => _buildPromptChip(p)),
         ],

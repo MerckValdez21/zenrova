@@ -39,18 +39,18 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Delete Account',
             style: AppTypography.heading4
-                .copyWith(color: AppColors.onSurface)),
+                .copyWith(color: Theme.of(context).colorScheme.onSurface)),
         content: Text(
           'This action is permanent and cannot be undone. All your journals, moods, and data will be erased.',
           style:
-              AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
+              AppTypography.body2.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text('Cancel',
                 style:
-                    AppTypography.button.copyWith(color: AppColors.onSurfaceMuted)),
+                    AppTypography.button.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -111,7 +111,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               const SizedBox(height: 20),
               Text('Change Password',
                   style: AppTypography.heading3
-                      .copyWith(color: AppColors.onSurface)),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 20),
               _buildPasswordField('Current Password', currentCtrl),
               const SizedBox(height: 14),
@@ -154,7 +154,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       controller: ctrl,
       obscureText: true,
       style:
-          AppTypography.body1.copyWith(color: AppColors.onSurface),
+          AppTypography.body1.copyWith(color: Theme.of(context).colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: const Icon(Icons.lock_outline,
@@ -181,18 +181,18 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded,
-              color: AppColors.onSurface),
+          icon: Icon(Icons.arrow_back_rounded,
+              color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text('Privacy & Security',
             style: AppTypography.heading3
-                .copyWith(color: AppColors.onSurface)),
+                .copyWith(color: Theme.of(context).colorScheme.onSurface)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -339,7 +339,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
   Widget _buildSectionHeader(String title) {
     return Text(title,
         style:
-            AppTypography.heading4.copyWith(color: AppColors.onSurface));
+            AppTypography.heading4.copyWith(color: Theme.of(context).colorScheme.onSurface));
   }
 
   Widget _buildToggleCard({
@@ -382,12 +382,12 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               children: [
                 Text(title,
                     style: AppTypography.body1.copyWith(
-                        color: AppColors.onSurface,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(subtitle,
                     style: AppTypography.body2
-                        .copyWith(color: AppColors.onSurfaceMuted)),
+                        .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
               ],
             ),
           ),

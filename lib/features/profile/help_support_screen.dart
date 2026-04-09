@@ -47,18 +47,18 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded,
-              color: AppColors.onSurface),
+          icon: Icon(Icons.arrow_back_rounded,
+              color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text('Help & Support',
             style: AppTypography.heading3
-                .copyWith(color: AppColors.onSurface)),
+                .copyWith(color: Theme.of(context).colorScheme.onSurface)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -104,7 +104,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             // Contact options
             Text('Contact Support',
                 style: AppTypography.heading4
-                    .copyWith(color: AppColors.onSurface)),
+                    .copyWith(color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 14),
 
             Row(
@@ -151,7 +151,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             // FAQ
             Text('Frequently Asked Questions',
                 style: AppTypography.heading4
-                    .copyWith(color: AppColors.onSurface)),
+                    .copyWith(color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 14),
 
             ...List.generate(_faqs.length, (i) => _buildFaqTile(i)),
@@ -164,15 +164,15 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 children: [
                   Text('Zenrova',
                       style: AppTypography.heading4
-                          .copyWith(color: AppColors.onSurfaceMuted)),
+                          .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                   const SizedBox(height: 4),
                   Text('Version 1.0.0 · Build 2025.1',
                       style: AppTypography.body2
-                          .copyWith(color: AppColors.onSurfaceMuted)),
+                          .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                   const SizedBox(height: 4),
                   Text('Your light through the dark.',
                       style: AppTypography.caption
-                          .copyWith(color: AppColors.onSurfaceMuted)),
+                          .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                 ],
               ),
             ),
@@ -220,7 +220,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             const SizedBox(height: 12),
             Text(label,
                 style: AppTypography.body1.copyWith(
-                    color: AppColors.onSurface,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600)),
             const SizedBox(height: 2),
             Text(subtitle,

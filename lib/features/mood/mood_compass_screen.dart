@@ -78,7 +78,7 @@ class _MoodCompassScreenState extends State<MoodCompassScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           _buildBgOrbs(),
@@ -190,12 +190,12 @@ class _MoodCompassScreenState extends State<MoodCompassScreen>
               const SizedBox(height: 10),
               Text(
                 'How are you\nfeeling right now?',
-                style: AppTypography.heading1.copyWith(color: AppColors.onSurface, height: 1.15),
+                style: AppTypography.heading1.copyWith(color: Theme.of(context).colorScheme.onSurface, height: 1.15),
               ),
               const SizedBox(height: 10),
               Text(
                 'Your emotions are valid. Let\'s check in.',
-                style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
+                style: AppTypography.body2.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
               ),
               const SizedBox(height: 28),
             ],
@@ -211,7 +211,7 @@ class _MoodCompassScreenState extends State<MoodCompassScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Select your mood', style: AppTypography.heading4.copyWith(color: AppColors.onSurface)),
+          Text('Select your mood', style: AppTypography.heading4.copyWith(color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 16),
           GridView.builder(
             shrinkWrap: true,

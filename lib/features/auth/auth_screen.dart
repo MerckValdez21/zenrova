@@ -206,7 +206,7 @@ class _AuthScreenState extends State<AuthScreen>
             children: [
               Text(
                 'Enter your email and we\'ll send you instructions to reset your password.',
-                style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
+                style: AppTypography.body2.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
               ),
               const SizedBox(height: 20),
               TextFormField(
@@ -355,7 +355,7 @@ class _AuthScreenState extends State<AuthScreen>
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       resizeToAvoidBottomInset: true,
       body: Stack(children: [
         _buildBgOrbs(size),
@@ -470,14 +470,14 @@ class _AuthScreenState extends State<AuthScreen>
       ),
       const SizedBox(height: 22),
       Text('Welcome Back',
-          style: AppTypography.heading1.copyWith(color: AppColors.onSurface),
+          style: AppTypography.heading1.copyWith(color: Theme.of(context).colorScheme.onSurface),
           textAlign: TextAlign.center),
       const SizedBox(height: 8),
       Text(
         _isSignIn
             ? 'Sign in to continue your wellness journey'
             : 'Create your free Zenrova account today',
-        style: AppTypography.body1.copyWith(color: AppColors.onSurfaceMuted),
+        style: AppTypography.body1.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
         textAlign: TextAlign.center,
       ),
     ]);
@@ -716,7 +716,7 @@ class _AuthScreenState extends State<AuthScreen>
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(label,
               style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.onSurface, fontWeight: FontWeight.w600)),
+                  color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600)),
         ),
         Container(
           decoration: BoxDecoration(
@@ -732,7 +732,7 @@ class _AuthScreenState extends State<AuthScreen>
             keyboardType: keyboardType,
             focusNode: focusNode,
             validator: validator,
-            style: AppTypography.input.copyWith(color: AppColors.onSurface),
+            style: AppTypography.input.copyWith(color: Theme.of(context).colorScheme.onSurface),
             decoration: InputDecoration(
               hintText: hint,
               enabledBorder: hasError
@@ -886,12 +886,12 @@ class _AuthScreenState extends State<AuthScreen>
             const SizedBox(width: 10),
             Text('Sign in with Google',
                 style: AppTypography.heading4
-                    .copyWith(color: AppColors.onSurface)),
+                    .copyWith(color: Theme.of(context).colorScheme.onSurface)),
           ]),
           const SizedBox(height: 6),
           Text('Enter the email linked to your Google account.',
               style: AppTypography.body2
-                  .copyWith(color: AppColors.onSurfaceMuted)),
+                  .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           const SizedBox(height: 16),
           _buildGoogleEmailField(),
           AnimatedSize(
@@ -960,7 +960,7 @@ class _AuthScreenState extends State<AuthScreen>
             focusNode: _googleFocusNode,
             keyboardType: TextInputType.emailAddress,
             onSubmitted: (_) => _handleGoogleContinue(),
-            style: AppTypography.input.copyWith(color: AppColors.onSurface),
+            style: AppTypography.input.copyWith(color: Theme.of(context).colorScheme.onSurface),
             decoration: InputDecoration(
               hintText: 'your@email.com',
               enabledBorder: _googleEmailError
@@ -1130,7 +1130,7 @@ class _AuthScreenState extends State<AuthScreen>
   Widget _buildToggleFooter() {
     return RichText(
       text: TextSpan(
-        style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
+        style: AppTypography.body2.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
         children: [
           TextSpan(
             text: _isSignIn

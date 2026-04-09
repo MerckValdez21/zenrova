@@ -45,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       extendBody: true,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -82,12 +82,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       Helpers.getGreeting(),
                       style: AppTypography.body1
-                          .copyWith(color: AppColors.onSurfaceMuted),
+                          .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
                     ),
                     Text(
                       '${userProvider.displayName} 👋',
                       style: AppTypography.heading2
-                          .copyWith(color: AppColors.onSurface),
+                          .copyWith(color: Theme.of(context).colorScheme.onSurface),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -153,12 +153,12 @@ class _HomeScreenState extends State<HomeScreen> {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
           border:
               Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
         ),
-        child: Icon(icon, color: AppColors.onSurface, size: 20),
+        child: Icon(icon, color: Theme.of(context).colorScheme.onSurface, size: 20),
       ),
     );
   }
@@ -454,7 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(AppStrings.suggested,
                     style: AppTypography.heading4
-                        .copyWith(color: AppColors.onSurface)),
+                        .copyWith(color: Theme.of(context).colorScheme.onSurface)),
                 TextButton(
                   onPressed: () {},
                   child: Text('See all',
@@ -567,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
                 color: const Color(0xFFEDE9FF), width: 1.5),
@@ -598,11 +598,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text('Quick Breathe',
                         style: AppTypography.heading4
-                            .copyWith(color: AppColors.onSurface)),
+                            .copyWith(color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 4),
                     Text('A 1-minute reset, anytime.',
                         style: AppTypography.body2
-                            .copyWith(color: AppColors.onSurfaceMuted)),
+                            .copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                   ],
                 ),
               ),
@@ -674,7 +674,7 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: EdgeInsets.fromLTRB(
           20, 0, 20, MediaQuery.of(context).padding.bottom + 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
