@@ -52,27 +52,19 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   // ── Load user from Firestore and set into UserProvider ─────────
-  /// Called after every successful login or register.
-  /// Fetches the user document from Firestore (which has isAdmin, etc.)
-  /// and pushes it into UserProvider so the whole app can read it.
   Future<void> _loadAndSetUser(
       BuildContext context, String uid, String email, String displayName) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     try {
-      // Try to get existing Firestore document
       UserModel? existingUser = await _firestoreService.getUser(uid);
 
       if (existingUser != null) {
-        // User document exists — load it (includes isAdmin flag)
         userProvider.setUser(existingUser);
-
-        // Update lastLoginAt in Firestore
         final updated = existingUser.copyWith(lastLoginAt: DateTime.now());
         await _firestoreService.updateUser(updated);
         userProvider.setUser(updated);
       } else {
-        // First time login — create the Firestore document
         final newUser = UserModel(
           id: uid,
           email: email,
@@ -80,13 +72,12 @@ class AuthViewModel extends ChangeNotifier {
           createdAt: DateTime.now(),
           lastLoginAt: DateTime.now(),
           isEmailVerified: true,
-          isAdmin: false, // new users are never admin by default
+          isAdmin: false,
         );
         await _firestoreService.createUser(newUser);
         userProvider.setUser(newUser);
       }
     } catch (e) {
-      // Firestore failed — set a basic user so the app still works
       debugPrint('Failed to load user from Firestore: $e');
       final fallbackUser = UserModel(
         id: uid,
@@ -133,7 +124,6 @@ class AuthViewModel extends ChangeNotifier {
       final displayName =
           credential.user?.displayName ?? email.split('@').first;
 
-      // Load user from Firestore and set isAdmin correctly
       if (context.mounted) {
         await _loadAndSetUser(context, uid, userEmail, displayName);
       }
@@ -177,7 +167,6 @@ class AuthViewModel extends ChangeNotifier {
       final uid = credential.user!.uid;
       final userEmail = credential.user?.email ?? email.trim();
 
-      // Create user doc in Firestore (isAdmin = false for all new users)
       if (context.mounted) {
         await _loadAndSetUser(context, uid, userEmail, name.trim());
       }
@@ -240,7 +229,8 @@ class AuthViewModel extends ChangeNotifier {
   // ── Guest ──────────────────────────────────────────────────────
   void continueAsGuest(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    userProvider.createSampleUser('Guest User');
+    // Uses createGuestUser — isAdmin is always false for guests
+    userProvider.createGuestUser();
     _currentUserEmail = null;
     _isAuthenticated = true;
     _setSuccess('Continuing as guest');

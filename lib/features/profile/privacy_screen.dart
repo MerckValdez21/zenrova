@@ -391,7 +391,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               ],
             ),
           ),
-          Switch(value: value, onChanged: onChanged, activeColor: AppColors.primary),
+          Switch(key: ValueKey('switch_${title.toLowerCase().replaceAll(' ', '_')}'), value: value, onChanged: onChanged, activeThumbColor: AppColors.primary),
         ],
       ),
     );

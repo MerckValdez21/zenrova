@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/providers/user_provider.dart';
-import '../home/home_screen.dart';
+import 'admin_dashboard_screen.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -53,7 +53,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         userProvider.createAdminUser('Admin');
 
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
           (route) => false,
         );
       }

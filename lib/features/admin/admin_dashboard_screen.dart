@@ -6,6 +6,7 @@ import '../../core/constants/app_typography.dart';
 import '../../core/providers/user_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../shared/models/user_model.dart';
+import 'admin_login_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -112,35 +113,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     final userProvider = Provider.of<UserProvider>(context);
 
     if (!userProvider.isAdmin) {
+      // Redirect to admin login screen
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const AdminLoginScreen()),
+          );
+        }
+      });
+      
       return Scaffold(
         backgroundColor: AppColors.background,
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.admin_panel_settings_outlined,
-                  size: 80, color: AppColors.onSurfaceMuted),
-              const SizedBox(height: 16),
-              Text('Access Denied',
-                  style: AppTypography.heading2
-                      .copyWith(color: AppColors.onSurface)),
-              const SizedBox(height: 8),
-              Text(
-                'You need admin privileges to access this screen.',
-                style: AppTypography.body2
-                    .copyWith(color: AppColors.onSurfaceMuted),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white),
-                child: Text('Go Back', style: AppTypography.button),
-              ),
-            ],
-          ),
+          child: CircularProgressIndicator(color: AppColors.primary),
         ),
       );
     }

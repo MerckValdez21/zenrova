@@ -11,7 +11,9 @@
 
 // Inside class FirestoreService {
 
-  /// Save a mood entry to Firestore (called from MoodCompassScreen).
+  import 'package:cloud_firestore/cloud_firestore.dart';
+
+/// Save a mood entry to Firestore (called from MoodCompassScreen).
   /// Collection: 'mood_entries'
   Future<void> saveMoodEntry(Map<String, dynamic> data) async {
     await FirebaseFirestore.instance
