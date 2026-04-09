@@ -312,7 +312,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                 ),
                 Switch(
-                  key: ValueKey('switch_${title.toLowerCase().replaceAll(' ', '_')}'),
                   value: value,
                   onChanged: onChanged,
                   activeThumbColor: AppColors.primary,

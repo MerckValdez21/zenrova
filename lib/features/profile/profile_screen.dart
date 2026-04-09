@@ -428,7 +428,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           Switch(
-            key: ValueKey('switch_dark_mode'),
             value: value,
             onChanged: onChanged,
             activeThumbColor: AppColors.primary,
@@ -445,7 +444,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      key: ValueKey('nav_tile_${title.toLowerCase().replaceAll(' ', '_')}'),
       leading: Container(
         width: 40,
         height: 40,
