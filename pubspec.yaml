@@ -37,6 +37,9 @@ dependencies:
   flutter_svg: ^2.0.9
   provider: ^6.1.2
   uuid: ^4.2.1
+  sqflite: ^2.3.3+1
+  path: ^1.9.0
+
   
   # Firebase dependencies
   firebase_core: ^2.32.0
