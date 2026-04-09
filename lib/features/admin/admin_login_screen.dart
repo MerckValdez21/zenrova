@@ -29,12 +29,37 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     super.dispose();
   }
 
+  void _navigateToDashboard() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    userProvider.createAdminUser('Admin');
+    
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+      (route) => false,
+    );
+  }
+
   Future<void> _loginAsAdmin() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
+    // Debug: Print entered values
+    print('DEBUG: Entered email: "$email"');
+    print('DEBUG: Entered password: "$password"');
+    print('DEBUG: Expected email: "$_adminEmail"');
+    print('DEBUG: Expected password: "$_adminPassword"');
+    print('DEBUG: Email match: ${email == _adminEmail}');
+    print('DEBUG: Password match: ${password == _adminPassword}');
+
     if (email.isEmpty || password.isEmpty) {
       _showError('Please enter your email and password.');
+      return;
+    }
+
+    // Temporary bypass for debugging - remove this in production
+    if (email.toLowerCase() == 'bypass' && password.toLowerCase() == 'admin') {
+      print('DEBUG: Using bypass login');
+      _navigateToDashboard();
       return;
     }
 
@@ -49,13 +74,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       await Future.delayed(const Duration(milliseconds: 800));
 
       if (mounted) {
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        userProvider.createAdminUser('Admin');
-
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
-          (route) => false,
-        );
+        _navigateToDashboard();
       }
     } catch (e) {
       _showError('Login failed. Please try again.');
