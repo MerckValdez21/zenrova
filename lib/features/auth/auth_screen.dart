@@ -116,8 +116,8 @@ class _AuthScreenState extends State<AuthScreen>
   // ── Guest Access ───────────────────────────────────────────────
   void _handleGuestAccess() {
     HapticFeedback.lightImpact();
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    userProvider.createSampleUser('Guest User');
+    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+    authViewModel.continueAsGuest(context);
     _showSuccessSnack('Welcome, Guest!');
     Future.delayed(const Duration(milliseconds: 500),
         () { if (mounted) _navigateToHome(); });
@@ -146,6 +146,7 @@ class _AuthScreenState extends State<AuthScreen>
 
     final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
     final success = await authViewModel.signIn(
+      context,
       _loginEmailCtrl.text.trim(),
       _loginPasswordCtrl.text,
     );
@@ -168,6 +169,7 @@ class _AuthScreenState extends State<AuthScreen>
 
     final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
     final success = await authViewModel.register(
+      context,
       _registerNameCtrl.text.trim(),
       _registerEmailCtrl.text.trim(),
       _registerPasswordCtrl.text,

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/user_provider.dart';
 import '../../core/utils/helpers.dart';
 import '../../services/firebase_auth_service.dart';
+import '../../services/firestore_service.dart';
+import '../../shared/models/user_model.dart';
 
 /// AuthViewModel — Zenrova
 /// Manages all authentication state for the app.
-/// Implements ChangeNotifier for reactive UI updates.
 class AuthViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
@@ -12,15 +15,19 @@ class AuthViewModel extends ChangeNotifier {
   String? _currentUserEmail;
   bool _isAuthenticated = false;
 
+  final FirebaseAuthService _authService = FirebaseAuthService();
+  final FirestoreService _firestoreService = FirestoreService();
+
   // ── Getters ────────────────────────────────────────────────────
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
   String? get currentUserEmail => _currentUserEmail;
   bool get isAuthenticated => _isAuthenticated;
-  String get userDisplayName => _currentUserEmail?.split('@').first ?? 'Friend';
+  String get userDisplayName =>
+      _currentUserEmail?.split('@').first ?? 'Friend';
 
-  // ── State setters ──────────────────────────────────────────────
+  // ── State helpers ──────────────────────────────────────────────
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
@@ -44,8 +51,59 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Load user from Firestore and set into UserProvider ─────────
+  /// Called after every successful login or register.
+  /// Fetches the user document from Firestore (which has isAdmin, etc.)
+  /// and pushes it into UserProvider so the whole app can read it.
+  Future<void> _loadAndSetUser(
+      BuildContext context, String uid, String email, String displayName) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    try {
+      // Try to get existing Firestore document
+      UserModel? existingUser = await _firestoreService.getUser(uid);
+
+      if (existingUser != null) {
+        // User document exists — load it (includes isAdmin flag)
+        userProvider.setUser(existingUser);
+
+        // Update lastLoginAt in Firestore
+        final updated = existingUser.copyWith(lastLoginAt: DateTime.now());
+        await _firestoreService.updateUser(updated);
+        userProvider.setUser(updated);
+      } else {
+        // First time login — create the Firestore document
+        final newUser = UserModel(
+          id: uid,
+          email: email,
+          displayName: displayName,
+          createdAt: DateTime.now(),
+          lastLoginAt: DateTime.now(),
+          isEmailVerified: true,
+          isAdmin: false, // new users are never admin by default
+        );
+        await _firestoreService.createUser(newUser);
+        userProvider.setUser(newUser);
+      }
+    } catch (e) {
+      // Firestore failed — set a basic user so the app still works
+      debugPrint('Failed to load user from Firestore: $e');
+      final fallbackUser = UserModel(
+        id: uid,
+        email: email,
+        displayName: displayName,
+        createdAt: DateTime.now(),
+        lastLoginAt: DateTime.now(),
+        isEmailVerified: true,
+        isAdmin: false,
+      );
+      userProvider.setUser(fallbackUser);
+    }
+  }
+
   // ── Sign in ────────────────────────────────────────────────────
-  Future<bool> signIn(String email, String password) async {
+  Future<bool> signIn(
+      BuildContext context, String email, String password) async {
     if (email.trim().isEmpty) {
       _setError('Please enter your email address.');
       return false;
@@ -65,12 +123,22 @@ class AuthViewModel extends ChangeNotifier {
 
     _setLoading(true);
     try {
-      final FirebaseAuthService authService = FirebaseAuthService();
-      final credential = await authService.signInWithEmailAndPassword(
+      final credential = await _authService.signInWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
-      _currentUserEmail = credential.user?.email;
+
+      final uid = credential.user!.uid;
+      final userEmail = credential.user?.email ?? email.trim();
+      final displayName =
+          credential.user?.displayName ?? email.split('@').first;
+
+      // Load user from Firestore and set isAdmin correctly
+      if (context.mounted) {
+        await _loadAndSetUser(context, uid, userEmail, displayName);
+      }
+
+      _currentUserEmail = userEmail;
       _isAuthenticated = true;
       _setSuccess('Welcome back to Zenrova!');
       return true;
@@ -83,7 +151,8 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   // ── Register ───────────────────────────────────────────────────
-  Future<bool> register(String name, String email, String password) async {
+  Future<bool> register(
+      BuildContext context, String name, String email, String password) async {
     if (name.trim().isEmpty) {
       _setError('Please enter your name.');
       return false;
@@ -99,15 +168,24 @@ class AuthViewModel extends ChangeNotifier {
 
     _setLoading(true);
     try {
-      final FirebaseAuthService authService = FirebaseAuthService();
-      final credential = await authService.registerWithEmailAndPassword(
+      final credential = await _authService.registerWithEmailAndPassword(
         email: email.trim(),
         password: password,
         displayName: name.trim(),
       );
-      _currentUserEmail = credential.user?.email;
+
+      final uid = credential.user!.uid;
+      final userEmail = credential.user?.email ?? email.trim();
+
+      // Create user doc in Firestore (isAdmin = false for all new users)
+      if (context.mounted) {
+        await _loadAndSetUser(context, uid, userEmail, name.trim());
+      }
+
+      _currentUserEmail = userEmail;
       _isAuthenticated = true;
-      _setSuccess('Welcome to Zenrova, ${Helpers.truncateText(name.trim(), 20)}!');
+      _setSuccess(
+          'Welcome to Zenrova, ${Helpers.truncateText(name.trim(), 20)}!');
       return true;
     } catch (e) {
       _setError('Registration failed. Please try again.');
@@ -126,8 +204,7 @@ class AuthViewModel extends ChangeNotifier {
 
     _setLoading(true);
     try {
-      final FirebaseAuthService authService = FirebaseAuthService();
-      await authService.resetPassword(email.trim());
+      await _authService.resetPassword(email.trim());
       _setSuccess('Reset link sent to ${email.trim()}. Check your inbox.');
       return true;
     } catch (e) {
@@ -138,7 +215,7 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  // ── Google sign-in (not yet implemented) ───────────────────────
+  // ── Google sign-in (placeholder) ───────────────────────────────
   Future<bool> signInWithGoogle(String googleEmail) async {
     if (!Helpers.isValidEmail(googleEmail.trim())) {
       _setError('Please enter a valid email address.');
@@ -161,7 +238,9 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   // ── Guest ──────────────────────────────────────────────────────
-  void continueAsGuest() {
+  void continueAsGuest(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    userProvider.createSampleUser('Guest User');
     _currentUserEmail = null;
     _isAuthenticated = true;
     _setSuccess('Continuing as guest');
@@ -172,7 +251,7 @@ class AuthViewModel extends ChangeNotifier {
     _isAuthenticated = false;
     _currentUserEmail = null;
     clearMessages();
-    await FirebaseAuthService().signOut();
+    await _authService.signOut();
   }
 
   // ── Helpers ────────────────────────────────────────────────────
