@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
-import '../../core/providers/user_provider.dart';
 import '../../features/auth/auth_view_model.dart';
 import '../home/home_screen.dart';
 
