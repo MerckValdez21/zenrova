@@ -178,6 +178,37 @@ class FirestoreService {
     return streak;
   }
   
+  // Check-in operations
+  Future<void> saveCheckIn(Map<String, dynamic> data) async {
+    try {
+      final docRef = _firestore.collection('check_ins').doc();
+      await docRef.set({...data, 'id': docRef.id});
+    } catch (e) {
+      if (kDebugMode) print('Error saving check-in: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllCheckIns({int limit = 100}) async {
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection('check_ins')
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
+      
+      return snapshot.docs
+          .map((doc) => {
+                'id': doc.id,
+                ...doc.data() as Map<String, dynamic>,
+              })
+          .toList();
+    } catch (e) {
+      if (kDebugMode) print('Error getting all check-ins: $e');
+      rethrow;
+    }
+  }
+
   // Delete operations
   Future<void> deleteMoodEntry(String moodId) async {
     try {
@@ -225,6 +256,25 @@ class FirestoreService {
           .toList();
     } catch (e) {
       if (kDebugMode) print('Error getting all journal entries: $e');
+      rethrow;
+    }
+  }
+  
+  Future<List<Map<String, dynamic>>> getAllMoodEntries({int limit = 100}) async {
+    try {
+      QuerySnapshot snapshot = await _moodsCollection
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
+      
+      return snapshot.docs
+          .map((doc) => {
+                'id': doc.id,
+                ...doc.data() as Map<String, dynamic>,
+              })
+          .toList();
+    } catch (e) {
+      if (kDebugMode) print('Error getting all mood entries: $e');
       rethrow;
     }
   }

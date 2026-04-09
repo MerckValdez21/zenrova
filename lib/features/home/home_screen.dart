@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/providers/user_provider.dart';
+import '../../core/utils/helpers.dart';
 import '../profile/profile_screen.dart';
 import '../mood/mood_compass_screen.dart';
 import '../journal/journal_screen.dart';
 import '../admin/admin_dashboard_screen.dart';
+import '../../services/firestore_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,21 +23,23 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedNavIndex = 0;
   int? _selectedMood;
+  bool _checkInSaved = false;
+  final FirestoreService _firestoreService = FirestoreService();
 
   final List<_NavItem> _navItems = [
-    _NavItem(icon: Icons.home_rounded, label: AppStrings.home),
-    _NavItem(icon: Icons.favorite_rounded, label: AppStrings.mood),
-    _NavItem(icon: Icons.book_rounded, label: AppStrings.journal),
+    _NavItem(icon: Icons.home_rounded,           label: AppStrings.home),
+    _NavItem(icon: Icons.favorite_rounded,       label: AppStrings.mood),
+    _NavItem(icon: Icons.book_rounded,           label: AppStrings.journal),
     _NavItem(icon: Icons.self_improvement_rounded, label: AppStrings.calm),
-    _NavItem(icon: Icons.people_rounded, label: AppStrings.community),
+    _NavItem(icon: Icons.people_rounded,         label: AppStrings.community),
   ];
 
   final List<_MoodItem> _moods = [
-    _MoodItem('😄', 'Great', Color(0xFF68D391)),
-    _MoodItem('🙂', 'Good', Color(0xFF5BB8F5)),
-    _MoodItem('😐', 'Okay', Color(0xFFFFD166)),
-    _MoodItem('😔', 'Low', Color(0xFFFC8181)),
-    _MoodItem('😞', 'Rough', Color(0xFFB794F4)),
+    _MoodItem('😄', 'Great',  const Color(0xFF68D391)),
+    _MoodItem('🙂', 'Good',   const Color(0xFF5BB8F5)),
+    _MoodItem('😐', 'Okay',   const Color(0xFFFFD166)),
+    _MoodItem('😔', 'Low',    const Color(0xFFFC8181)),
+    _MoodItem('😞', 'Rough',  const Color(0xFFB794F4)),
   ];
 
   @override
@@ -50,7 +55,12 @@ class _HomeScreenState extends State<HomeScreen> {
           SliverToBoxAdapter(child: _buildQuickStats()),
           SliverToBoxAdapter(child: _buildSuggestedSection()),
           SliverToBoxAdapter(child: _buildBreathingCard()),
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
+          // Extra bottom padding so content clears the floating nav bar
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: MediaQuery.of(context).padding.bottom + 100,
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: _buildBottomNav(),
@@ -70,41 +80,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppStrings.goodMorning,
-                      style: AppTypography.body1.copyWith(
-                        color: AppColors.onSurfaceMuted,
-                      ),
+                      Helpers.getGreeting(),
+                      style: AppTypography.body1
+                          .copyWith(color: AppColors.onSurfaceMuted),
                     ),
                     Text(
                       '${userProvider.displayName} 👋',
-                      style: AppTypography.heading2.copyWith(
-                        color: AppColors.onSurface,
-                      ),
+                      style: AppTypography.heading2
+                          .copyWith(color: AppColors.onSurface),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              // Notification bell
-              Consumer<UserProvider>(
-                builder: (context, userProvider, child) {
-                  return Row(
-                    children: [
-                      if (userProvider.isAdmin)
-                        _buildAdminButton(),
-                      const SizedBox(width: 10),
-                      _buildIconButton(Icons.notifications_outlined),
-                      const SizedBox(width: 10),
-                    ],
-                  );
-                },
+              if (userProvider.isAdmin) ...[
+                _buildAdminButton(),
+                const SizedBox(width: 10),
+              ],
+              _buildIconButton(
+                Icons.notifications_outlined,
+                onTap: () {},
               ),
-              // Avatar (clickable for profile)
+              const SizedBox(width: 10),
               GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                  );
-                },
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => const ProfileScreen()),
+                ),
                 child: Container(
                   width: 44,
                   height: 44,
@@ -126,10 +129,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 44,
                             height: 44,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(Icons.person_rounded,
-                                  color: Colors.white, size: 22);
-                            },
+                            errorBuilder: (_, __, ___) => const Icon(
+                                Icons.person_rounded,
+                                color: Colors.white,
+                                size: 22),
                           ),
                         )
                       : const Icon(Icons.person_rounded,
@@ -143,16 +146,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildIconButton(IconData icon) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
+  Widget _buildIconButton(IconData icon, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border:
+              Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
+        ),
+        child: Icon(icon, color: AppColors.onSurface, size: 20),
       ),
-      child: Icon(icon, color: AppColors.onSurface, size: 20),
     );
   }
 
@@ -162,15 +169,12 @@ class _HomeScreenState extends State<HomeScreen> {
         HapticFeedback.lightImpact();
         Navigator.of(context).push(
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const AdminDashboardScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) => SlideTransition(
+            pageBuilder: (_, __, ___) => const AdminDashboardScreen(),
+            transitionsBuilder: (_, anim, __, child) => SlideTransition(
               position: Tween<Offset>(
-                begin: const Offset(0, 1),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
+                      begin: const Offset(0, 1), end: Offset.zero)
+                  .animate(CurvedAnimation(
+                      parent: anim, curve: Curves.easeOutCubic)),
               child: child,
             ),
             transitionDuration: const Duration(milliseconds: 400),
@@ -191,7 +195,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 20),
+        child: const Icon(Icons.admin_panel_settings_rounded,
+            color: Colors.white, size: 20),
       ),
     );
   }
@@ -216,6 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -227,25 +233,54 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Text(
                     'Daily Check-in',
                     style: AppTypography.label.copyWith(
-                      color: Colors.white,
-                      letterSpacing: 1.0,
-                    ),
+                        color: Colors.white, letterSpacing: 1.0),
                   ),
                 ),
+                if (_checkInSaved)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle_rounded,
+                            color: Colors.white, size: 12),
+                        const SizedBox(width: 4),
+                        Text('Saved',
+                            style: AppTypography.caption
+                                .copyWith(color: Colors.white)),
+                      ],
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 14),
             Text(
               AppStrings.howAreYouFeeling,
-              style: AppTypography.heading3.copyWith(color: Colors.white),
+              style: AppTypography.heading3
+                  .copyWith(color: Colors.white),
             ),
             const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(
-                _moods.length,
-                (i) => _buildMoodButton(i),
-              ),
+            // Mood buttons — no overflow on narrow screens
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final btnWidth =
+                    (constraints.maxWidth - 4 * 8) / 5;
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(
+                    _moods.length,
+                    (i) => SizedBox(
+                      width: btnWidth,
+                      child: _buildMoodButton(i),
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -259,59 +294,91 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        setState(() => _selectedMood = index);
-        
-        // Show success message after selecting mood
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    Text('${mood.emoji} ', style: const TextStyle(fontSize: 18)),
-                    Text(
-                      'Thanks for checking in! You\'re feeling ${mood.label.toLowerCase()}.',
-                      style: AppTypography.body2.copyWith(color: Colors.white),
-                    ),
-                  ],
-                ),
-                backgroundColor: AppColors.success,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                margin: const EdgeInsets.all(16),
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
+        setState(() {
+          _selectedMood = index;
+          _checkInSaved = false;
         });
+        _saveCheckIn(mood);
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 52,
-        height: 64,
+        padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.15),
+          color: isSelected
+              ? Colors.white
+              : Colors.white.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(16),
-          border: isSelected
-              ? Border.all(color: Colors.white, width: 2)
-              : Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.5),
+          border: Border.all(
+            color: isSelected
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.2),
+            width: isSelected ? 2 : 1.5,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(mood.emoji, style: const TextStyle(fontSize: 22)),
+            Text(mood.emoji,
+                style: const TextStyle(fontSize: 20)),
             const SizedBox(height: 4),
             Text(
               mood.label,
               style: AppTypography.caption.copyWith(
                 color: isSelected ? AppColors.primary : Colors.white,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: isSelected
+                    ? FontWeight.w600
+                    : FontWeight.w400,
+                fontSize: 10,
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _saveCheckIn(_MoodItem mood) async {
+    final userProvider =
+        Provider.of<UserProvider>(context, listen: false);
+    final userId = userProvider.user?.id ?? 'guest';
+    final userName = userProvider.displayName;
+
+    try {
+      await _firestoreService.saveCheckIn({
+        'userId': userId,
+        'userName': userName,
+        'mood': mood.label,
+        'emoji': mood.emoji,
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      });
+      if (mounted) {
+        setState(() => _checkInSaved = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(children: [
+              Text('${mood.emoji} ',
+                  style: const TextStyle(fontSize: 18)),
+              Flexible(
+                child: Text(
+                  'Feeling ${mood.label.toLowerCase()} — logged!',
+                  style: AppTypography.body2
+                      .copyWith(color: Colors.white),
+                ),
+              ),
+            ]),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      // Silently fail — not critical
+      debugPrint('Check-in save failed: $e');
+    }
   }
 
   Widget _buildQuickStats() {
@@ -338,30 +405,25 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildStatCard(
       String emoji, String value, String label, Color color, Color bg) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: color.withValues(alpha: 0.2),
-          width: 1.5,
-        ),
+            color: color.withValues(alpha: 0.2), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(emoji, style: const TextStyle(fontSize: 20)),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTypography.heading2.copyWith(color: color),
-          ),
-          Text(
-            label,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.onSurfaceMuted,
-            ),
-          ),
+          Text(value,
+              style: AppTypography.heading2.copyWith(color: color)),
+          Text(label,
+              style: AppTypography.caption
+                  .copyWith(color: AppColors.onSurfaceMuted),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis),
         ],
       ),
     );
@@ -369,12 +431,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSuggestedSection() {
     final suggestions = [
-      _SuggestionCard('Morning Gratitude', '5 min · Journal', Icons.book_outlined,
-          [Color(0xFF6A4BC4), Color(0xFF9B7FD4)]),
-      _SuggestionCard('Box Breathing', '4 min · Calm', Icons.air_rounded,
-          [Color(0xFF2D9AD8), Color(0xFF5BB8F5)]),
-      _SuggestionCard('Evening Reflection', '8 min · Journal', Icons.nights_stay_outlined,
-          [Color(0xFF38A169), Color(0xFF68D391)]),
+      _SuggestionCard('Morning Gratitude', '5 min · Journal',
+          Icons.book_outlined,
+          const [Color(0xFF6A4BC4), Color(0xFF9B7FD4)]),
+      _SuggestionCard('Box Breathing', '4 min · Calm',
+          Icons.air_rounded,
+          const [Color(0xFF2D9AD8), Color(0xFF5BB8F5)]),
+      _SuggestionCard('Evening Reflection', '8 min · Journal',
+          Icons.nights_stay_outlined,
+          const [Color(0xFF38A169), Color(0xFF68D391)]),
     ];
 
     return Padding(
@@ -387,17 +452,14 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  AppStrings.suggested,
-                  style: AppTypography.heading4.copyWith(
-                      color: AppColors.onSurface),
-                ),
+                Text(AppStrings.suggested,
+                    style: AppTypography.heading4
+                        .copyWith(color: AppColors.onSurface)),
                 TextButton(
                   onPressed: () {},
                   child: Text('See all',
-                      style: AppTypography.buttonSmall.copyWith(
-                        color: AppColors.primary,
-                      )),
+                      style: AppTypography.buttonSmall
+                          .copyWith(color: AppColors.primary)),
                 ),
               ],
             ),
@@ -410,8 +472,9 @@ class _HomeScreenState extends State<HomeScreen> {
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.only(right: 24),
               itemCount: suggestions.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 14),
-              itemBuilder: (context, i) => _buildSuggestionCard(suggestions[i]),
+              separatorBuilder: (_, __) => const SizedBox(width: 14),
+              itemBuilder: (context, i) =>
+                  _buildSuggestionCard(suggestions[i]),
             ),
           ),
         ],
@@ -423,42 +486,22 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        
-        // Navigate to appropriate screen based on card type
-        if (card.title.contains('Journal') || card.title.contains('Gratitude') || card.title.contains('Reflection')) {
+        if (card.title.contains('Journal') ||
+            card.title.contains('Gratitude') ||
+            card.title.contains('Reflection')) {
           Navigator.of(context).push(
             PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => const JournalScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) => SlideTransition(
+              pageBuilder: (_, __, ___) => const JournalScreen(),
+              transitionsBuilder: (_, anim, __, child) => SlideTransition(
                 position: Tween<Offset>(
-                  begin: const Offset(0, 1),
-                  end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                )),
+                        begin: const Offset(0, 1), end: Offset.zero)
+                    .animate(CurvedAnimation(
+                        parent: anim, curve: Curves.easeOutCubic)),
                 child: child,
               ),
               transitionDuration: const Duration(milliseconds: 400),
             ),
           );
-        } else {
-          // Show placeholder for other features
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Opening ${card.title}...'),
-              backgroundColor: AppColors.primary,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              margin: const EdgeInsets.all(16),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted) {
-              _showFeaturePlaceholder(card.title);
-            }
-          });
         }
       },
       child: Container(
@@ -490,24 +533,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(card.icon, color: Colors.white, size: 22),
+              child:
+                  Icon(card.icon, color: Colors.white, size: 22),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  card.title,
-                  style: AppTypography.heading4.copyWith(color: Colors.white),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(card.title,
+                    style: AppTypography.heading4
+                        .copyWith(color: Colors.white),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
-                Text(
-                  card.subtitle,
-                  style: AppTypography.caption.copyWith(
-                    color: Colors.white.withValues(alpha: 0.8),
-                  ),
-                ),
+                Text(card.subtitle,
+                    style: AppTypography.caption.copyWith(
+                        color: Colors.white.withValues(alpha: 0.8))),
               ],
             ),
           ],
@@ -529,13 +569,13 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
+            border: Border.all(
+                color: const Color(0xFFEDE9FF), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: AppColors.shadowSoft,
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
+                  color: AppColors.shadowSoft,
+                  blurRadius: 20,
+                  offset: const Offset(0, 4))
             ],
           ),
           child: Row(
@@ -545,32 +585,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 60,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF2D9AD8), Color(0xFF5BB8F5)],
-                  ),
+                      colors: [Color(0xFF2D9AD8), Color(0xFF5BB8F5)]),
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: const Icon(
-                  Icons.air_rounded,
-                  color: Colors.white,
-                  size: 30,
-                ),
+                child: const Icon(Icons.air_rounded,
+                    color: Colors.white, size: 30),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Quick Breathe',
-                      style: AppTypography.heading4.copyWith(
-                          color: AppColors.onSurface),
-                    ),
+                    Text('Quick Breathe',
+                        style: AppTypography.heading4
+                            .copyWith(color: AppColors.onSurface)),
                     const SizedBox(height: 4),
-                    Text(
-                      'A 1-minute reset, anytime.',
-                      style: AppTypography.body2.copyWith(
-                          color: AppColors.onSurfaceMuted),
-                    ),
+                    Text('A 1-minute reset, anytime.',
+                        style: AppTypography.body2
+                            .copyWith(color: AppColors.onSurfaceMuted)),
                   ],
                 ),
               ),
@@ -581,11 +613,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: const Color(0xFFEEF8FF),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.play_arrow_rounded,
-                  color: Color(0xFF2D9AD8),
-                  size: 22,
-                ),
+                child: const Icon(Icons.play_arrow_rounded,
+                    color: Color(0xFF2D9AD8), size: 22),
               ),
             ],
           ),
@@ -597,8 +626,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void _startBreathingExercise() {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      builder: (_) => Dialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -610,75 +640,27 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const Icon(Icons.air_rounded, color: Colors.white, size: 60),
               const SizedBox(height: 16),
-              Text(
-                'Breathing Exercise',
-                style: AppTypography.heading3.copyWith(color: Colors.white),
-              ),
+              Text('Breathing Exercise',
+                  style: AppTypography.heading3
+                      .copyWith(color: Colors.white)),
               const SizedBox(height: 8),
-              Text(
-                'Coming soon! 🧘‍♀️',
-                style: AppTypography.body1.copyWith(color: Colors.white.withValues(alpha: 0.9)),
-                textAlign: TextAlign.center,
-              ),
+              Text('Coming soon! 🧘‍♀️',
+                  style: AppTypography.body1.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9)),
+                  textAlign: TextAlign.center),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 32, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
-                child: Text('Got it!', style: AppTypography.button),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showFeaturePlaceholder(String featureName) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(Icons.construction_rounded, 
-                    color: AppColors.primary, size: 30),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                featureName,
-                style: AppTypography.heading3.copyWith(color: AppColors.onSurface),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'This feature is coming soon! We\'re working hard to bring you the best wellness experience.',
-                style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: Text('Excited!', style: AppTypography.button),
+                child:
+                    Text('Got it!', style: AppTypography.button),
               ),
             ],
           ),
@@ -690,7 +672,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBottomNav() {
     return Container(
       margin: EdgeInsets.fromLTRB(
-          20, 0, 20, MediaQuery.of(context).padding.bottom + 16),
+          20, 0, 20, MediaQuery.of(context).padding.bottom + 12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(28),
@@ -728,55 +710,39 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        
-        // Handle navigation for different tabs
         switch (index) {
-          case 0: // Home
-            setState(() => _selectedNavIndex = index);
+          case 0:
+            setState(() => _selectedNavIndex = 0);
             break;
-          case 1: // Mood
-            Navigator.of(context).push(
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => const MoodCompassScreen(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 1),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: animation,
-                    curve: Curves.easeOutCubic,
-                  )),
-                  child: child,
-                ),
-                transitionDuration: const Duration(milliseconds: 400),
+          case 1:
+            Navigator.of(context).push(PageRouteBuilder(
+              pageBuilder: (_, __, ___) => const MoodCompassScreen(),
+              transitionsBuilder: (_, anim, __, child) => SlideTransition(
+                position: Tween<Offset>(
+                        begin: const Offset(0, 1), end: Offset.zero)
+                    .animate(CurvedAnimation(
+                        parent: anim, curve: Curves.easeOutCubic)),
+                child: child,
               ),
-            );
+              transitionDuration: const Duration(milliseconds: 400),
+            ));
             break;
-          case 2: // Journal
-            Navigator.of(context).push(
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => const JournalScreen(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) => SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 1),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: animation,
-                    curve: Curves.easeOutCubic,
-                  )),
-                  child: child,
-                ),
-                transitionDuration: const Duration(milliseconds: 400),
+          case 2:
+            Navigator.of(context).push(PageRouteBuilder(
+              pageBuilder: (_, __, ___) => const JournalScreen(),
+              transitionsBuilder: (_, anim, __, child) => SlideTransition(
+                position: Tween<Offset>(
+                        begin: const Offset(0, 1), end: Offset.zero)
+                    .animate(CurvedAnimation(
+                        parent: anim, curve: Curves.easeOutCubic)),
+                child: child,
               ),
-            );
+              transitionDuration: const Duration(milliseconds: 400),
+            ));
             break;
-          case 3: // Calm
+          case 3:
+          case 4:
             setState(() => _selectedNavIndex = index);
-            // TODO: Navigate to Calm screen when implemented
-            break;
-          case 4: // Community
-            setState(() => _selectedNavIndex = index);
-            // TODO: Navigate to Community screen when implemented
             break;
         }
       },
@@ -788,21 +754,15 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              item.icon,
-              size: 20,
-              color: isSelected ? Colors.white : AppColors.onSurfaceMuted,
-            ),
+            Icon(item.icon, size: 20,
+                color: isSelected ? Colors.white : AppColors.onSurfaceMuted),
             if (isSelected) ...[
               const SizedBox(width: 4),
-              Text(
-                item.label,
-                style: AppTypography.buttonSmall.copyWith(
-                  color: Colors.white,
-                  fontSize: 11,
-                ),
-              ),
+              Text(item.label,
+                  style: AppTypography.buttonSmall.copyWith(
+                      color: Colors.white, fontSize: 11)),
             ],
           ],
         ),
@@ -829,5 +789,6 @@ class _SuggestionCard {
   final String subtitle;
   final IconData icon;
   final List<Color> gradientColors;
-  const _SuggestionCard(this.title, this.subtitle, this.icon, this.gradientColors);
+  const _SuggestionCard(
+      this.title, this.subtitle, this.icon, this.gradientColors);
 }

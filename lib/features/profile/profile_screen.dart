@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/providers/user_provider.dart';
 import '../auth/auth_screen.dart';
 import '../admin/admin_dashboard_screen.dart';
-// AdminLoginScreen import removed — regular users never navigate there from profile
+import 'notifications_screen.dart';
+import 'privacy_screen.dart';
+import 'help_support_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,8 +26,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    _nameController = TextEditingController(text: userProvider.displayName);
-    _emailController = TextEditingController(text: userProvider.email);
+    _nameController =
+        TextEditingController(text: userProvider.displayName);
+    _emailController =
+        TextEditingController(text: userProvider.email);
   }
 
   @override
@@ -35,37 +40,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
-    if (_formKey.currentState!.validate()) {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (!_formKey.currentState!.validate()) return;
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) => const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
+    final userProvider =
+        Provider.of<UserProvider>(context, listen: false);
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      ),
+    );
+
+    // Simulate network save
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    if (mounted) Navigator.of(context).pop(); // close loading
+
+    // Update display name in provider — reflects immediately app-wide
+    userProvider.updateUser(displayName: _nameController.text.trim());
+
+    if (mounted) {
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(children: [
+            Icon(Icons.check_circle_rounded,
+                color: Colors.white, size: 18),
+            SizedBox(width: 10),
+            Text('Profile updated successfully!'),
+          ]),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
         ),
       );
-
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-
-      userProvider.updateUser(displayName: _nameController.text);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Profile updated successfully!'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
-      }
     }
   }
 
@@ -85,37 +98,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: AppColors.onSurface),
               onPressed: () => Navigator.of(context).pop(),
             ),
-            title: Text(
-              'Profile',
-              style:
-                  AppTypography.heading3.copyWith(color: AppColors.onSurface),
-            ),
+            title: Text('Profile',
+                style: AppTypography.heading3
+                    .copyWith(color: AppColors.onSurface)),
             actions: [
               TextButton(
                 onPressed: _saveProfile,
-                child: Text(
-                  'Save',
-                  style: AppTypography.button.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: Text('Save',
+                    style: AppTypography.button.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600)),
               ),
             ],
           ),
+          // Use SingleChildScrollView to prevent overflow on small screens
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-                // Profile Avatar
+                // ── Avatar ──────────────────────────────────────────
                 Stack(
                   children: [
                     Container(
-                      width: 120,
-                      height: 120,
+                      width: 110,
+                      height: 110,
                       decoration: BoxDecoration(
                         gradient: AppColors.primaryGradient,
                         shape: BoxShape.circle,
@@ -131,60 +140,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ? ClipOval(
                               child: Image.network(
                                 user!.avatarUrl!,
-                                width: 120,
-                                height: 120,
+                                width: 110,
+                                height: 110,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
+                                errorBuilder: (_, __, ___) => const Icon(
                                     Icons.person_rounded,
                                     color: Colors.white,
-                                    size: 50,
-                                  );
-                                },
+                                    size: 48),
                               ),
                             )
-                          : const Icon(
-                              Icons.person_rounded,
-                              color: Colors.white,
-                              size: 50,
-                            ),
+                          : const Icon(Icons.person_rounded,
+                              color: Colors.white, size: 48),
                     ),
                     Positioned(
                       bottom: 0,
                       right: 0,
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.shadowSoft,
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content:
-                                      Text('Image picker coming soon!')),
-                            );
-                          },
+                      child: GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Image picker coming soon!')),
+                          );
+                        },
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: AppColors.shadowSoft,
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2))
+                            ],
+                          ),
+                          child: const Icon(Icons.camera_alt_outlined,
+                              size: 16, color: AppColors.primary),
                         ),
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 8),
 
-                // Profile Form
+                // Name display (updates live)
+                Text(
+                  userProvider.displayName,
+                  style: AppTypography.heading3
+                      .copyWith(color: AppColors.onSurface),
+                ),
+                if (userProvider.email.isNotEmpty)
+                  Text(
+                    userProvider.email,
+                    style: AppTypography.body2
+                        .copyWith(color: AppColors.onSurfaceMuted),
+                  ),
+
+                if (userProvider.isAdmin) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Text('ADMIN',
+                        style: AppTypography.label
+                            .copyWith(color: Colors.white)),
+                  ),
+                ],
+
+                const SizedBox(height: 28),
+
+                // ── Form ────────────────────────────────────────────
                 Form(
                   key: _formKey,
                   child: Column(
@@ -194,17 +226,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         label: 'Display Name',
                         hint: 'Enter your name',
                         icon: Icons.person_outline_rounded,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
                             return 'Please enter your name';
                           }
-                          if (value.trim().length < 2) {
+                          if (v.trim().length < 2) {
                             return 'Name must be at least 2 characters';
                           }
                           return null;
                         },
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                       _buildProfileField(
                         controller: _emailController,
                         label: 'Email',
@@ -217,17 +249,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
 
-                // Account Settings
+                // ── Settings section ────────────────────────────────
                 _buildSettingsSection(userProvider),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 24),
 
-                // Logout Button
+                // ── Logout ──────────────────────────────────────────
                 _buildLogoutButton(),
-
-                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -247,58 +277,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppTypography.body2.copyWith(
-            color: AppColors.onSurface,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        Text(label,
+            style: AppTypography.body2.copyWith(
+                color: AppColors.onSurface, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           enabled: enabled,
           validator: validator,
           style: AppTypography.body1.copyWith(
-            color: enabled ? AppColors.onSurface : AppColors.onSurfaceMuted,
-          ),
+              color:
+                  enabled ? AppColors.onSurface : AppColors.onSurfaceMuted),
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: Icon(
-              icon,
-              color: enabled
-                  ? AppColors.onSurfaceMuted
-                  : AppColors.onSurfaceMuted.withValues(alpha: 0.5),
-            ),
+            prefixIcon: Icon(icon,
+                color: enabled
+                    ? AppColors.onSurfaceMuted
+                    : AppColors.onSurfaceMuted.withValues(alpha: 0.5)),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                  color: AppColors.onSurfaceMuted.withValues(alpha: 0.3)),
-            ),
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                    color: AppColors.onSurfaceMuted.withValues(alpha: 0.3))),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                  color: AppColors.onSurfaceMuted.withValues(alpha: 0.3)),
-            ),
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                    color: AppColors.onSurfaceMuted.withValues(alpha: 0.3))),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: AppColors.primary),
-            ),
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AppColors.primary)),
             disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                  color: AppColors.onSurfaceMuted.withValues(alpha: 0.2)),
-            ),
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                    color: AppColors.onSurfaceMuted.withValues(alpha: 0.2))),
             filled: true,
-            fillColor: enabled ? Colors.white : AppColors.surfaceElevated,
+            fillColor:
+                enabled ? Colors.white : AppColors.surfaceElevated,
           ),
         ),
       ],
     );
   }
 
-  /// Settings section — admin tile is ONLY shown to users where isAdmin == true.
-  /// Regular users see no admin-related option at all.
   Widget _buildSettingsSection(UserProvider userProvider) {
     return Container(
       decoration: BoxDecoration(
@@ -307,65 +326,117 @@ class _ProfileScreenState extends State<ProfileScreen> {
         border: Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowSoft,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
+              color: AppColors.shadowSoft,
+              blurRadius: 10,
+              offset: const Offset(0, 2))
         ],
       ),
       child: Column(
         children: [
-          _buildSettingsTile(
+          // ── Dark Mode Toggle ─────────────────────────────────────
+          _buildSwitchTile(
+            icon: Icons.dark_mode_outlined,
+            title: 'Dark Mode',
+            subtitle: userProvider.isDarkMode ? 'On' : 'Off',
+            value: userProvider.isDarkMode,
+            onChanged: (v) {
+              HapticFeedback.lightImpact();
+              userProvider.setDarkMode(v);
+            },
+          ),
+          _buildDivider(),
+
+          // ── Notifications ────────────────────────────────────────
+          _buildNavTile(
             icon: Icons.notifications_outlined,
             title: 'Notifications',
             subtitle: 'Manage your notifications',
-            onTap: () {
-              // TODO: Implement notifications settings
-            },
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const NotificationsScreen())),
           ),
           _buildDivider(),
-          _buildSettingsTile(
+
+          // ── Privacy ──────────────────────────────────────────────
+          _buildNavTile(
             icon: Icons.lock_outline,
-            title: 'Privacy',
-            subtitle: 'Privacy and security settings',
-            onTap: () {
-              // TODO: Implement privacy settings
-            },
+            title: 'Privacy & Security',
+            subtitle: 'Manage privacy and security settings',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const PrivacyScreen())),
           ),
 
-          // ── ADMIN TILE: only visible to admin users ──────────────
+          // ── Admin Dashboard (admin only) ─────────────────────────
           if (userProvider.isAdmin) ...[
             _buildDivider(),
-            _buildSettingsTile(
+            _buildNavTile(
               icon: Icons.admin_panel_settings_outlined,
               title: 'Admin Dashboard',
               subtitle: 'Manage users and view analytics',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const AdminDashboardScreen(),
-                  ),
-                );
-              },
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const AdminDashboardScreen())),
             ),
           ],
-          // ── END ADMIN TILE ───────────────────────────────────────
 
           _buildDivider(),
-          _buildSettingsTile(
+
+          // ── Help & Support ───────────────────────────────────────
+          _buildNavTile(
             icon: Icons.help_outline,
             title: 'Help & Support',
             subtitle: 'Get help and contact support',
-            onTap: () {
-              // TODO: Implement help & support
-            },
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const HelpSupportScreen())),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSettingsTile({
+  Widget _buildSwitchTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: AppTypography.body1
+                        .copyWith(color: AppColors.onSurface)),
+                Text(subtitle,
+                    style: AppTypography.body2
+                        .copyWith(color: AppColors.onSurfaceMuted)),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.primary,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavTile({
     required IconData icon,
     required String title,
     required String subtitle,
@@ -381,71 +452,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Icon(icon, color: AppColors.primary, size: 20),
       ),
-      title: Text(
-        title,
-        style: AppTypography.body1.copyWith(color: AppColors.onSurface),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
-      ),
-      trailing: const Icon(
-        Icons.arrow_forward_ios_rounded,
-        color: AppColors.onSurfaceMuted,
-        size: 16,
-      ),
+      title: Text(title,
+          style: AppTypography.body1.copyWith(color: AppColors.onSurface)),
+      subtitle: Text(subtitle,
+          style: AppTypography.body2
+              .copyWith(color: AppColors.onSurfaceMuted)),
+      trailing: const Icon(Icons.arrow_forward_ios_rounded,
+          color: AppColors.onSurfaceMuted, size: 16),
       onTap: onTap,
     );
   }
 
   Widget _buildDivider() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Divider(
-        height: 1,
-        thickness: 1,
-        color: const Color(0xFFEDE9FF),
-      ),
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: Divider(height: 1, thickness: 1, color: Color(0xFFEDE9FF)),
     );
   }
 
   Widget _buildLogoutButton() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
-      ),
-      child: ElevatedButton(
+      child: OutlinedButton(
         onPressed: () {
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
+            builder: (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
               title: const Text('Logout'),
-              content: const Text('Are you sure you want to logout?'),
+              content:
+                  const Text('Are you sure you want to logout?'),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.of(ctx).pop(),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    Navigator.of(ctx).pop();
                     Provider.of<UserProvider>(context, listen: false)
                         .clearUser();
                     Navigator.of(context).pushAndRemoveUntil(
                       PageRouteBuilder(
-                        pageBuilder:
-                            (context, animation, secondaryAnimation) =>
-                                const AuthScreen(),
-                        transitionsBuilder:
-                            (context, animation, secondaryAnimation, child) =>
-                                FadeTransition(
-                          opacity: animation,
-                          child: child,
-                        ),
+                        pageBuilder: (_, __, ___) => const AuthScreen(),
+                        transitionsBuilder: (_, a, __, child) =>
+                            FadeTransition(opacity: a, child: child),
                       ),
                       (route) => false,
                     );
@@ -460,21 +512,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           );
         },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
+        style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.error,
+          side: BorderSide(color: AppColors.error.withValues(alpha: 0.4)),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+              borderRadius: BorderRadius.circular(16)),
+          padding: const EdgeInsets.symmetric(vertical: 16),
         ),
-        child: Text(
-          'Logout',
-          style: AppTypography.button.copyWith(
-            color: AppColors.error,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        child: Text('Logout',
+            style: AppTypography.button.copyWith(color: AppColors.error)),
       ),
     );
   }

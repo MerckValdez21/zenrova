@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
+import 'core/providers/user_provider.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/auth/auth_screen.dart';
 
@@ -9,11 +11,17 @@ class ZenrovaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Zenrova',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const MainNavigator(),
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        return MaterialApp(
+          title: 'Zenrova',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: userProvider.themeMode,
+          home: const MainNavigator(),
+        );
+      },
     );
   }
 }
@@ -35,8 +43,6 @@ class _MainNavigatorState extends State<MainNavigator> {
         onComplete: () => setState(() => _showOnboarding = false),
       );
     }
-    // AuthScreen handles its own navigation to HomeScreen
-    // via Navigator.pushReplacement when auth succeeds.
     return const AuthScreen();
   }
 }

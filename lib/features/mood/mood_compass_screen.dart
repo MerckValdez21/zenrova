@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
+import '../../../core/providers/user_provider.dart';
+import '../../../services/firestore_service.dart';
+import '../../../shared/models/mood_model.dart';
 
 class MoodCompassScreen extends StatefulWidget {
   const MoodCompassScreen({super.key});
@@ -16,18 +20,19 @@ class _MoodCompassScreenState extends State<MoodCompassScreen>
   int _selectedIntensity = 5;
   bool _isSaving = false;
   final TextEditingController _notesController = TextEditingController();
+  final FirestoreService _firestoreService = FirestoreService();
 
   late AnimationController _headerAnimController;
   late Animation<double> _headerAnim;
   late List<AnimationController> _moodAnimControllers;
 
   final List<MoodOption> _moods = [
-    MoodOption('Happy',   Icons.sentiment_very_satisfied_rounded, Color(0xFF38A169), Color(0xFFEAF7EF), Color(0xFFC6F0D6)),
-    MoodOption('Excited', Icons.celebration_rounded,              Color(0xFFED8936), Color(0xFFFFF3E8), Color(0xFFFFDEB8)),
-    MoodOption('Calm',    Icons.spa_rounded,                      Color(0xFF3182CE), Color(0xFFEBF4FF), Color(0xFFBEDAF8)),
-    MoodOption('Anxious', Icons.psychology_rounded,               Color(0xFFD69E2E), Color(0xFFFFFBEB), Color(0xFFFDE68A)),
-    MoodOption('Sad',     Icons.sentiment_dissatisfied_rounded,   Color(0xFF805AD5), Color(0xFFF3EEFF), Color(0xFFD9C7F8)),
-    MoodOption('Angry',   Icons.local_fire_department_rounded,    Color(0xFFE53E3E), Color(0xFFFFF0F0), Color(0xFFFED7D7)),
+    MoodOption('Happy',   Icons.sentiment_very_satisfied_rounded, const Color(0xFF38A169), const Color(0xFFEAF7EF), const Color(0xFFC6F0D6)),
+    MoodOption('Excited', Icons.celebration_rounded,              const Color(0xFFED8936), const Color(0xFFFFF3E8), const Color(0xFFFFDEB8)),
+    MoodOption('Calm',    Icons.spa_rounded,                      const Color(0xFF3182CE), const Color(0xFFEBF4FF), const Color(0xFFBEDAF8)),
+    MoodOption('Anxious', Icons.psychology_rounded,               const Color(0xFFD69E2E), const Color(0xFFFFFBEB), const Color(0xFFFDE68A)),
+    MoodOption('Sad',     Icons.sentiment_dissatisfied_rounded,   const Color(0xFF805AD5), const Color(0xFFF3EEFF), const Color(0xFFD9C7F8)),
+    MoodOption('Angry',   Icons.local_fire_department_rounded,    const Color(0xFFE53E3E), const Color(0xFFFFF0F0), const Color(0xFFFED7D7)),
   ];
 
   static const List<String> _intensityLabels = [
@@ -139,7 +144,6 @@ class _MoodCompassScreenState extends State<MoodCompassScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top row
               Row(
                 children: [
                   GestureDetector(
@@ -175,7 +179,6 @@ class _MoodCompassScreenState extends State<MoodCompassScreen>
                 ],
               ),
               const SizedBox(height: 28),
-              // Greeting chip
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
@@ -335,7 +338,6 @@ class _MoodCompassScreenState extends State<MoodCompassScreen>
               style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
             ),
             const SizedBox(height: 20),
-            // Custom slider track with gradient
             SliderTheme(
               data: SliderThemeData(
                 trackHeight: 6,
@@ -486,7 +488,51 @@ class _MoodCompassScreenState extends State<MoodCompassScreen>
   Future<void> _saveMoodEntry() async {
     HapticFeedback.mediumImpact();
     setState(() => _isSaving = true);
-    await Future.delayed(const Duration(milliseconds: 1000));
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userId = userProvider.user?.id ?? 'guest';
+
+    // Convert mood label to MoodType enum
+    MoodType moodType;
+    switch (_moods[_selectedMood].label.toLowerCase()) {
+      case 'happy':
+        moodType = MoodType.happy;
+        break;
+      case 'excited':
+        moodType = MoodType.excited;
+        break;
+      case 'calm':
+        moodType = MoodType.calm;
+        break;
+      case 'anxious':
+        moodType = MoodType.anxious;
+        break;
+      case 'sad':
+        moodType = MoodType.sad;
+        break;
+      case 'angry':
+        moodType = MoodType.angry;
+        break;
+      default:
+        moodType = MoodType.neutral;
+    }
+
+    final moodEntry = MoodModel(
+      id: '${userId}_${DateTime.now().millisecondsSinceEpoch}',
+      userId: userId,
+      moodType: moodType,
+      intensity: _selectedIntensity,
+      note: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+      tags: [], // Empty tags for now
+      createdAt: DateTime.now(),
+    );
+
+    try {
+      await _firestoreService.saveMoodEntry(moodEntry);
+    } catch (e) {
+      debugPrint('Mood save failed (Firestore): $e');
+    }
+
     if (!mounted) return;
     setState(() => _isSaving = false);
 

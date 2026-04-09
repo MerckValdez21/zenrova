@@ -1,21 +1,26 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../../shared/models/user_model.dart';
 
 class UserProvider with ChangeNotifier {
   UserModel? _user;
-  
+  bool _isDarkMode = false;
+
   UserModel? get user => _user;
-  
+
   String get displayName => _user?.displayName ?? 'Guest';
   String get email => _user?.email ?? '';
   String? get avatarUrl => _user?.avatarUrl;
   bool get isAdmin => _user?.isAdmin ?? false;
-  
+  bool get isDarkMode => _isDarkMode;
+
+  ThemeMode get themeMode => _isDarkMode ? ThemeMode.dark : ThemeMode.light;
+
   void setUser(UserModel user) {
     _user = user;
     notifyListeners();
   }
-  
+
   void updateUser({
     String? displayName,
     String? avatarUrl,
@@ -30,29 +35,49 @@ class UserProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   void clearUser() {
     _user = null;
     notifyListeners();
   }
-  
-  // For demo purposes, create a sample user
-  void createSampleUser(String name, {bool isAdmin = false}) {
+
+  void toggleDarkMode() {
+    _isDarkMode = !_isDarkMode;
+    notifyListeners();
+  }
+
+  void setDarkMode(bool value) {
+    _isDarkMode = value;
+    notifyListeners();
+  }
+
+  // Used only by AdminLoginScreen — sets isAdmin = true
+  void createAdminUser(String name) {
     _user = UserModel(
-      id: 'demo-user-id',
-      email: isAdmin ? 'admin@zenrova.com' : 'user@zenrova.com',
+      id: 'admin-demo-id',
+      email: 'admin@zenrova.com',
       displayName: name,
       avatarUrl: null,
       createdAt: DateTime.now(),
       lastLoginAt: DateTime.now(),
       isEmailVerified: true,
-      isAdmin: isAdmin,
+      isAdmin: true,
     );
     notifyListeners();
   }
-  
-  // Create admin user for testing
-  void createAdminUser(String name) {
-    createSampleUser(name, isAdmin: true);
+
+  // For guest access — isAdmin is always false
+  void createGuestUser() {
+    _user = UserModel(
+      id: 'guest-${DateTime.now().millisecondsSinceEpoch}',
+      email: '',
+      displayName: 'Guest',
+      avatarUrl: null,
+      createdAt: DateTime.now(),
+      lastLoginAt: DateTime.now(),
+      isEmailVerified: false,
+      isAdmin: false,
+    );
+    notifyListeners();
   }
 }

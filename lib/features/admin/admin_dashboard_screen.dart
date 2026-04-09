@@ -18,10 +18,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final FirestoreService _firestoreService = FirestoreService();
-  
+
   Map<String, dynamic>? _adminStats;
   List<UserModel>? _users;
   List<Map<String, dynamic>>? _allJournalEntries;
+  List<Map<String, dynamic>>? _allMoodEntries;
+  List<Map<String, dynamic>>? _allCheckIns;
   List<Map<String, dynamic>>? _selectedUserEntries;
   UserModel? _selectedUser;
   bool _isLoading = false;
@@ -30,7 +32,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _loadAdminData();
   }
 
@@ -42,21 +44,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   Future<void> _loadAdminData() async {
     if (!mounted) return;
-    
     setState(() => _isLoading = true);
-    
+
     try {
       final results = await Future.wait([
         _firestoreService.getAdminStats(),
         _firestoreService.getAllUsers(),
         _firestoreService.getAllJournalEntries(),
+        _firestoreService.getAllMoodEntries(),
+        _firestoreService.getAllCheckIns(),
       ]);
-      
+
       if (mounted) {
         setState(() {
           _adminStats = results[0] as Map<String, dynamic>;
           _users = results[1] as List<UserModel>;
           _allJournalEntries = results[2] as List<Map<String, dynamic>>;
+          _allMoodEntries = results[3] as List<Map<String, dynamic>>;
+          _allCheckIns = results[4] as List<Map<String, dynamic>>;
           _isLoading = false;
         });
       }
@@ -74,11 +79,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   }
 
   Future<void> _loadUserEntries(UserModel user) async {
-    setState(() => _isLoading = true);
-    _selectedUser = user;
-    
+    setState(() {
+      _isLoading = true;
+      _selectedUser = user;
+    });
     try {
-      final entries = await _firestoreService.getUserJournalEntriesForAdmin(user.id);
+      final entries =
+          await _firestoreService.getUserJournalEntriesForAdmin(user.id);
       if (mounted) {
         setState(() {
           _selectedUserEntries = entries;
@@ -86,33 +93,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading user entries: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   List<UserModel> get _filteredUsers {
     if (_users == null) return [];
     if (_searchQuery.isEmpty) return _users!;
-    
-    return _users!.where((user) =>
-      user.displayName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().contains(_searchQuery.toLowerCase())
-    ).toList();
+    return _users!
+        .where((u) =>
+            u.displayName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            u.email.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-    
-    // Check if user is admin
+
     if (!userProvider.isAdmin) {
       return Scaffold(
         backgroundColor: AppColors.background,
@@ -120,26 +118,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.admin_panel_settings_outlined, 
-                   size: 80, color: AppColors.onSurfaceMuted),
+              Icon(Icons.admin_panel_settings_outlined,
+                  size: 80, color: AppColors.onSurfaceMuted),
               const SizedBox(height: 16),
-              Text(
-                'Access Denied',
-                style: AppTypography.heading2.copyWith(color: AppColors.onSurface),
-              ),
+              Text('Access Denied',
+                  style: AppTypography.heading2
+                      .copyWith(color: AppColors.onSurface)),
               const SizedBox(height: 8),
               Text(
                 'You need admin privileges to access this screen.',
-                style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
+                style: AppTypography.body2
+                    .copyWith(color: AppColors.onSurfaceMuted),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                ),
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white),
                 child: Text('Go Back', style: AppTypography.button),
               ),
             ],
@@ -153,82 +150,99 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
-        title: Text(
-          'Admin Dashboard',
-          style: AppTypography.heading3.copyWith(color: AppColors.onSurface),
-        ),
+        title: Text('Admin Dashboard',
+            style:
+                AppTypography.heading3.copyWith(color: AppColors.onSurface)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.onSurface),
+          icon: const Icon(Icons.arrow_back_rounded,
+              color: AppColors.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+            tooltip: 'Refresh',
+            onPressed: _loadAdminData,
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.primary,
           unselectedLabelColor: AppColors.onSurfaceMuted,
           indicatorColor: AppColors.primary,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           tabs: const [
-            Tab(text: 'Overview', icon: Icon(Icons.dashboard_outlined)),
-            Tab(text: 'Users', icon: Icon(Icons.people_outlined)),
-            Tab(text: 'Journals', icon: Icon(Icons.book_outlined)),
+            Tab(text: 'Overview', icon: Icon(Icons.dashboard_outlined, size: 18)),
+            Tab(text: 'Users',    icon: Icon(Icons.people_outlined, size: 18)),
+            Tab(text: 'Journals', icon: Icon(Icons.book_outlined, size: 18)),
+            Tab(text: 'Moods',    icon: Icon(Icons.favorite_outlined, size: 18)),
+            Tab(text: 'Check-ins',icon: Icon(Icons.checklist_rounded, size: 18)),
           ],
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary))
           : TabBarView(
               controller: _tabController,
               children: [
                 _buildOverviewTab(),
                 _buildUsersTab(),
                 _buildJournalsTab(),
+                _buildMoodsTab(),
+                _buildCheckInsTab(),
               ],
             ),
     );
   }
 
+  // ── Overview ─────────────────────────────────────────────────────
   Widget _buildOverviewTab() {
     if (_adminStats == null) {
       return const Center(child: Text('No data available'));
     }
-
     final stats = _adminStats!;
-    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Platform Statistics', style: AppTypography.heading4.copyWith(color: AppColors.onSurface)),
+          Text('Platform Statistics',
+              style: AppTypography.heading4
+                  .copyWith(color: AppColors.onSurface)),
           const SizedBox(height: 20),
-          
-          Row(
-            children: [
-              Expanded(child: _buildStatCard('Total Users', stats['totalUsers'].toString(), AppColors.primary)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Admin Users', stats['adminUsers'].toString(), AppColors.secondary)),
-            ],
-          ),
+          Row(children: [
+            Expanded(
+                child: _buildStatCard('Total Users',
+                    '${stats['totalUsers'] ?? 0}', AppColors.primary)),
+            const SizedBox(width: 16),
+            Expanded(
+                child: _buildStatCard('Admin Users',
+                    '${stats['adminUsers'] ?? 0}', AppColors.secondary)),
+          ]),
           const SizedBox(height: 16),
-          
-          Row(
-            children: [
-              Expanded(child: _buildStatCard('Total Journals', stats['totalJournals'].toString(), AppColors.success)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Total Moods', stats['totalMoods'].toString(), AppColors.accent)),
-            ],
-          ),
-          const SizedBox(height: 24),
-          
-          Text('Recent Activity (Last 7 Days)', style: AppTypography.heading4.copyWith(color: AppColors.onSurface)),
+          Row(children: [
+            Expanded(
+                child: _buildStatCard('Total Journals',
+                    '${stats['totalJournals'] ?? 0}', AppColors.success)),
+            const SizedBox(width: 16),
+            Expanded(
+                child: _buildStatCard('Total Moods',
+                    '${stats['totalMoods'] ?? 0}', AppColors.accent)),
+          ]),
           const SizedBox(height: 16),
-          
-          Row(
-            children: [
-              Expanded(child: _buildStatCard('New Journals', stats['recentJournals'].toString(), AppColors.primaryLight)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('New Moods', stats['recentMoods'].toString(), AppColors.secondaryLight)),
-            ],
-          ),
+          Row(children: [
+            Expanded(
+                child: _buildStatCard('Daily Check-ins',
+                    '${stats['totalCheckIns'] ?? 0}',
+                    const Color(0xFF805AD5))),
+            const SizedBox(width: 16),
+            Expanded(
+                child: _buildStatCard('This Week',
+                    '${stats['recentJournals'] ?? 0}',
+                    AppColors.primaryLight)),
+          ]),
         ],
       ),
     );
@@ -240,37 +254,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
-        boxShadow: [BoxShadow(color: AppColors.shadowSoft, blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(
+            color: color.withValues(alpha: 0.2), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+              color: AppColors.shadowSoft,
+              blurRadius: 8,
+              offset: const Offset(0, 2))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            value,
-            style: AppTypography.heading2.copyWith(color: color),
-          ),
+          Text(value,
+              style: AppTypography.heading2.copyWith(color: color)),
           const SizedBox(height: 4),
-          Text(
-            title,
-            style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
-          ),
+          Text(title,
+              style: AppTypography.body2
+                  .copyWith(color: AppColors.onSurfaceMuted)),
         ],
       ),
     );
   }
 
+  // ── Users ─────────────────────────────────────────────────────────
   Widget _buildUsersTab() {
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.all(16),
           child: TextField(
-            onChanged: (value) => setState(() => _searchQuery = value),
+            onChanged: (v) => setState(() => _searchQuery = v),
             decoration: InputDecoration(
               hintText: 'Search users...',
               prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12)),
               filled: true,
               fillColor: AppColors.surface,
             ),
@@ -280,10 +299,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: _filteredUsers.length,
-            itemBuilder: (context, index) {
-              final user = _filteredUsers[index];
-              return _buildUserCard(user);
-            },
+            itemBuilder: (context, i) =>
+                _buildUserCard(_filteredUsers[i]),
           ),
         ),
       ],
@@ -297,44 +314,53 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEDE9FF), width: 1),
-        boxShadow: [BoxShadow(color: AppColors.shadowSoft, blurRadius: 6, offset: const Offset(0, 2))],
+        border:
+            Border.all(color: const Color(0xFFEDE9FF), width: 1),
+        boxShadow: [
+          BoxShadow(
+              color: AppColors.shadowSoft,
+              blurRadius: 6,
+              offset: const Offset(0, 2))
+        ],
       ),
       child: ListTile(
         contentPadding: EdgeInsets.zero,
         leading: CircleAvatar(
-          backgroundColor: user.isAdmin ? AppColors.primary : AppColors.secondary,
+          backgroundColor:
+              user.isAdmin ? AppColors.primary : AppColors.secondary,
           child: user.avatarUrl != null
-              ? ClipOval(child: Image.network(user.avatarUrl!, width: 40, height: 40, fit: BoxFit.cover))
+              ? ClipOval(
+                  child: Image.network(user.avatarUrl!,
+                      width: 40, height: 40, fit: BoxFit.cover))
               : Icon(Icons.person, color: Colors.white, size: 20),
         ),
         title: Row(
           children: [
             Expanded(
-              child: Text(
-                user.displayName,
-                style: AppTypography.heading4.copyWith(color: AppColors.onSurface),
-              ),
-            ),
+                child: Text(user.displayName,
+                    style: AppTypography.heading4
+                        .copyWith(color: AppColors.onSurface))),
             if (user.isAdmin)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text('ADMIN', style: AppTypography.caption.copyWith(color: AppColors.primary)),
+                child: Text('ADMIN',
+                    style: AppTypography.caption
+                        .copyWith(color: AppColors.primary)),
               ),
           ],
         ),
-        subtitle: Text(
-          user.email,
-          style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
-        ),
+        subtitle: Text(user.email,
+            style: AppTypography.body2
+                .copyWith(color: AppColors.onSurfaceMuted)),
         trailing: IconButton(
           icon: const Icon(Icons.visibility, color: AppColors.primary),
           onPressed: () {
-            _tabController.animateTo(2); // Switch to journals tab
+            _tabController.animateTo(2);
             _loadUserEntries(user);
           },
         ),
@@ -342,6 +368,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     );
   }
 
+  // ── Journals ──────────────────────────────────────────────────────
   Widget _buildJournalsTab() {
     if (_selectedUser != null && _selectedUserEntries != null) {
       return Column(
@@ -361,13 +388,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 Expanded(
                   child: Text(
                     'Entries for ${_selectedUser!.displayName}',
-                    style: AppTypography.heading4.copyWith(color: AppColors.primary),
+                    style: AppTypography.heading4
+                        .copyWith(color: AppColors.primary),
                   ),
                 ),
-                Text(
-                  '${_selectedUserEntries!.length} entries',
-                  style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
-                ),
+                Text('${_selectedUserEntries!.length} entries',
+                    style: AppTypography.body2
+                        .copyWith(color: AppColors.onSurfaceMuted)),
               ],
             ),
           ),
@@ -375,10 +402,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _selectedUserEntries!.length,
-              itemBuilder: (context, index) {
-                final entry = _selectedUserEntries![index];
-                return _buildJournalEntryCard(entry);
-              },
+              itemBuilder: (context, i) =>
+                  _buildJournalCard(_selectedUserEntries![i]),
             ),
           ),
         ],
@@ -388,65 +413,236 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _allJournalEntries?.length ?? 0,
-      itemBuilder: (context, index) {
-        final entry = _allJournalEntries![index];
-        return _buildJournalEntryCard(entry);
-      },
+      itemBuilder: (context, i) =>
+          _buildJournalCard(_allJournalEntries![i]),
     );
   }
 
-  Widget _buildJournalEntryCard(Map<String, dynamic> entry) {
+  Widget _buildJournalCard(Map<String, dynamic> entry) {
     final createdAt = entry['createdAt'] as Timestamp?;
     final date = createdAt?.toDate() ?? DateTime.now();
-    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEDE9FF), width: 1),
-        boxShadow: [BoxShadow(color: AppColors.shadowSoft, blurRadius: 6, offset: const Offset(0, 2))],
+        border:
+            Border.all(color: const Color(0xFFEDE9FF), width: 1),
+        boxShadow: [
+          BoxShadow(
+              color: AppColors.shadowSoft,
+              blurRadius: 6,
+              offset: const Offset(0, 2))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            entry['title'] ?? 'Untitled',
-            style: AppTypography.heading4.copyWith(color: AppColors.onSurface),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          Text(entry['title'] ?? 'Untitled',
+              style: AppTypography.heading4
+                  .copyWith(color: AppColors.onSurface),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis),
           const SizedBox(height: 8),
-          Text(
-            entry['content'] ?? '',
-            style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
+          Text(entry['content'] ?? '',
+              style: AppTypography.body2
+                  .copyWith(color: AppColors.onSurfaceMuted),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis),
           const SizedBox(height: 12),
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
+              _buildTag(
                   'User: ${entry['userId'] ?? 'Unknown'}',
-                  style: AppTypography.caption.copyWith(color: AppColors.primary),
-                ),
-              ),
+                  AppColors.primary),
               const Spacer(),
               Text(
                 '${date.day}/${date.month}/${date.year}',
-                style: AppTypography.caption.copyWith(color: AppColors.onSurfaceMuted),
+                style: AppTypography.caption
+                    .copyWith(color: AppColors.onSurfaceMuted),
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  // ── Moods ─────────────────────────────────────────────────────────
+  Widget _buildMoodsTab() {
+    final entries = _allMoodEntries ?? [];
+    if (entries.isEmpty) {
+      return Center(
+        child: Text('No mood entries yet.',
+            style: AppTypography.body1
+                .copyWith(color: AppColors.onSurfaceMuted)),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: entries.length,
+      itemBuilder: (context, i) => _buildMoodCard(entries[i]),
+    );
+  }
+
+  Widget _buildMoodCard(Map<String, dynamic> entry) {
+    final createdAt = entry['createdAt'] as Timestamp?;
+    final date = createdAt?.toDate() ?? DateTime.now();
+    final mood = entry['mood'] as String? ?? 'Unknown';
+    final intensity = entry['intensity'] as int? ?? 0;
+    final notes = entry['notes'] as String? ?? '';
+    final userName = entry['userName'] as String? ?? 'Unknown';
+
+    final moodColors = {
+      'Happy': const Color(0xFF38A169),
+      'Excited': const Color(0xFFED8936),
+      'Calm': const Color(0xFF3182CE),
+      'Anxious': const Color(0xFFD69E2E),
+      'Sad': const Color(0xFF805AD5),
+      'Angry': const Color(0xFFE53E3E),
+    };
+    final moodColor = moodColors[mood] ?? AppColors.primary;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+            color: moodColor.withValues(alpha: 0.2), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+              color: AppColors.shadowSoft,
+              blurRadius: 6,
+              offset: const Offset(0, 2))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: moodColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(mood,
+                    style: AppTypography.buttonSmall
+                        .copyWith(color: moodColor)),
+              ),
+              const SizedBox(width: 8),
+              Text('Intensity: $intensity/10',
+                  style: AppTypography.body2
+                      .copyWith(color: AppColors.onSurfaceMuted)),
+              const Spacer(),
+              Text('${date.day}/${date.month}/${date.year}',
+                  style: AppTypography.caption
+                      .copyWith(color: AppColors.onSurfaceMuted)),
+            ],
+          ),
+          if (notes.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(notes,
+                style: AppTypography.body2
+                    .copyWith(color: AppColors.onSurfaceMuted),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
+          ],
+          const SizedBox(height: 10),
+          _buildTag('User: $userName', AppColors.secondary),
+        ],
+      ),
+    );
+  }
+
+  // ── Daily Check-ins ───────────────────────────────────────────────
+  Widget _buildCheckInsTab() {
+    final entries = _allCheckIns ?? [];
+    if (entries.isEmpty) {
+      return Center(
+        child: Text('No daily check-ins yet.',
+            style: AppTypography.body1
+                .copyWith(color: AppColors.onSurfaceMuted)),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: entries.length,
+      itemBuilder: (context, i) => _buildCheckInCard(entries[i]),
+    );
+  }
+
+  Widget _buildCheckInCard(Map<String, dynamic> entry) {
+    final createdAt = entry['createdAt'] as Timestamp?;
+    final date = createdAt?.toDate() ?? DateTime.now();
+    final mood = entry['mood'] as String? ?? 'Unknown';
+    final userName = entry['userName'] as String? ?? 'Unknown';
+
+    const moodEmojis = {
+      'Great': '😄',
+      'Good': '🙂',
+      'Okay': '😐',
+      'Low': '😔',
+      'Rough': '😞',
+    };
+    final emoji = moodEmojis[mood] ?? '😶';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border:
+            Border.all(color: const Color(0xFFEDE9FF), width: 1),
+        boxShadow: [
+          BoxShadow(
+              color: AppColors.shadowSoft,
+              blurRadius: 6,
+              offset: const Offset(0, 2))
+        ],
+      ),
+      child: Row(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 32)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(mood,
+                    style: AppTypography.heading4
+                        .copyWith(color: AppColors.onSurface)),
+                Text('by $userName',
+                    style: AppTypography.body2
+                        .copyWith(color: AppColors.onSurfaceMuted)),
+              ],
+            ),
+          ),
+          Text(
+            '${date.day}/${date.month}/${date.year}',
+            style: AppTypography.caption
+                .copyWith(color: AppColors.onSurfaceMuted),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTag(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child:
+          Text(text, style: AppTypography.caption.copyWith(color: color)),
     );
   }
 }

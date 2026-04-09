@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/providers/user_provider.dart';
@@ -27,6 +29,8 @@ class _JournalScreenState extends State<JournalScreen>
   final DatabaseHelper _dbHelper = DatabaseHelper.instance; // <-- NEW
   final Uuid _uuid = const Uuid();
   bool _isLoading = false;
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
+  String? _currentUserId;
 
   final List<String> _prompts = [
     'What am I grateful for today?',
@@ -44,6 +48,7 @@ class _JournalScreenState extends State<JournalScreen>
       duration: const Duration(milliseconds: 400),
     )..forward();
     _loadEntries();
+    _setupConnectivityListener();
   }
 
   /// Load entries: try Firestore first, fall back to local SQFLite if offline.
@@ -52,6 +57,7 @@ class _JournalScreenState extends State<JournalScreen>
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     if (userProvider.user == null) return;
 
+    _currentUserId = userProvider.user!.id;
     setState(() => _isLoading = true);
 
     try {
@@ -85,6 +91,8 @@ class _JournalScreenState extends State<JournalScreen>
               )));
           _isLoading = false;
         });
+        // Sync any unsynced local entries now that we're online
+        await _syncUnsyncedEntries(userProvider.user!.id);
       }
     } catch (e) {
       // 3. Firestore failed (offline) — load from SQFLite instead
@@ -145,11 +153,22 @@ class _JournalScreenState extends State<JournalScreen>
     }
   }
 
+  /// Set up connectivity listener to automatically sync when coming back online
+  void _setupConnectivityListener() {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+      if (result != ConnectivityResult.none && _currentUserId != null) {
+        // We're back online, try to sync any unsynced entries
+        _syncUnsyncedEntries(_currentUserId!);
+      }
+    });
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
     _fabAnimController.dispose();
+    _connectivitySubscription?.cancel();
     super.dispose();
   }
 

@@ -16,10 +16,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
-  // Hardcoded admin credentials for demo purposes
+  // Credentials are checked but NOT displayed in the UI
   static const String _adminEmail = 'admin@zenrova.com';
-  static const String _adminPassword = 'admin123';
+  static const String _adminPassword = 'Zenrova@Admin2025!';
 
   @override
   void dispose() {
@@ -29,35 +30,37 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   }
 
   Future<void> _loginAsAdmin() async {
-    if (_emailController.text != _adminEmail || 
-        _passwordController.text != _adminPassword) {
-      _showError('Invalid admin credentials');
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      _showError('Please enter your email and password.');
+      return;
+    }
+
+    if (email != _adminEmail || password != _adminPassword) {
+      _showError('Invalid admin credentials. Please try again.');
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      // Simulate login delay
-      await Future.delayed(const Duration(seconds: 1));
-      
+      await Future.delayed(const Duration(milliseconds: 800));
+
       if (mounted) {
-        // Create admin user
         final userProvider = Provider.of<UserProvider>(context, listen: false);
-        userProvider.createAdminUser('Admin User');
-        
-        // Navigate to home screen
+        userProvider.createAdminUser('Admin');
+
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
           (route) => false,
         );
       }
     } catch (e) {
-      _showError('Login failed: $e');
+      _showError('Login failed. Please try again.');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -66,6 +69,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -80,12 +86,29 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 60),
-              
-              // Admin icon
+              const SizedBox(height: 40),
+
+              // Back button
+              GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
+                  ),
+                  child: const Icon(Icons.arrow_back_rounded,
+                      color: AppColors.onSurface, size: 20),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
               Container(
-                width: 80,
-                height: 80,
+                width: 72,
+                height: 72,
                 decoration: BoxDecoration(
                   gradient: AppColors.primaryGradient,
                   shape: BoxShape.circle,
@@ -100,137 +123,144 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 child: const Icon(
                   Icons.admin_panel_settings_rounded,
                   color: Colors.white,
-                  size: 40,
+                  size: 36,
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               Text(
                 'Admin Login',
                 style: AppTypography.heading1.copyWith(color: AppColors.onSurface),
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               Text(
-                'Access administrative controls and view all user data',
+                'Sign in to access administrative controls.',
                 style: AppTypography.body2.copyWith(color: AppColors.onSurfaceMuted),
               ),
-              
+
               const SizedBox(height: 40),
-              
-              // Demo credentials notice
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.info_outline, color: AppColors.primary, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Demo Credentials',
-                          style: AppTypography.heading4.copyWith(color: AppColors.primary),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Email: $_adminEmail\nPassword: $_adminPassword',
-                      style: AppTypography.body2.copyWith(color: AppColors.onSurface),
-                    ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 32),
-              
+
               // Email field
+              _buildLabel('Admin Email'),
+              const SizedBox(height: 8),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 style: AppTypography.body1.copyWith(color: AppColors.onSurface),
                 decoration: InputDecoration(
-                  labelText: 'Admin Email',
                   hintText: 'Enter admin email',
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.email_outlined,
+                      color: AppColors.onSurfaceMuted),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                        color: Color(0xFFE0D9FF), width: 1.5),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide:
+                        const BorderSide(color: AppColors.primary, width: 2),
+                  ),
                   filled: true,
                   fillColor: AppColors.surface,
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
-              // Password field
+
+              _buildLabel('Password'),
+              const SizedBox(height: 8),
               TextField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 style: AppTypography.body1.copyWith(color: AppColors.onSurface),
+                onSubmitted: (_) => _loginAsAdmin(),
                 decoration: InputDecoration(
-                  labelText: 'Password',
                   hintText: 'Enter admin password',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.lock_outline,
+                      color: AppColors.onSurfaceMuted),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: AppColors.onSurfaceMuted,
+                      size: 20,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                        color: Color(0xFFE0D9FF), width: 1.5),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide:
+                        const BorderSide(color: AppColors.primary, width: 2),
+                  ),
                   filled: true,
                   fillColor: AppColors.surface,
                 ),
               ),
-              
-              const SizedBox(height: 32),
-              
+
+              const SizedBox(height: 36),
+
               // Login button
-              SizedBox(
-                width: double.infinity,
-                height: 52,
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: AppColors.primaryGradient,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _loginAsAdmin,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
+                    minimumSize: const Size(double.infinity, 58),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                   ),
                   child: _isLoading
                       ? const SizedBox(
-                          height: 20,
-                          width: 20,
+                          height: 22,
+                          width: 22,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
+                              strokeWidth: 2.5, color: Colors.white),
                         )
                       : Text('Login as Admin', style: AppTypography.button),
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Back button
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text('Back', style: AppTypography.button),
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: AppTypography.bodyMedium.copyWith(
+          color: AppColors.onSurface, fontWeight: FontWeight.w600),
     );
   }
 }
