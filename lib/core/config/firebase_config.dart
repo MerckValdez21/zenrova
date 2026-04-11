@@ -19,20 +19,20 @@ class FirebaseConfig {
   }
 }
 
-// You'll need to generate this file using FlutterFire CLI
-// Run: flutterfire configure
+// Firebase configuration for real users
+// Replace these values with your actual Firebase project credentials
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
-    // These are placeholder values - you'll need to run flutterfire configure
-    // to get your actual Firebase configuration
+    // TODO: Replace with your actual Firebase project values
+    // Get these from your Firebase Console > Project Settings > General
     return const FirebaseOptions(
-      apiKey: 'your-api-key',
-      appId: 'your-app-id',
-      messagingSenderId: 'your-sender-id',
-      projectId: 'your-project-id',
-      storageBucket: 'your-storage-bucket',
-      authDomain: 'your-auth-domain',
-      measurementId: 'your-measurement-id',
+      apiKey: 'AIzaSyCvOQZ-NDcIdmPSc6MGSfkDrK1lQYWCyF8', // Replace with your API key
+      appId: '1:204314257371:android:2ca9ec469026404c7769fe', // Replace with your App ID
+      messagingSenderId: '204314257371', // Replace with your Sender ID
+      projectId: 'zenrova-app', // Replace with your Project ID
+      storageBucket: 'zenrova-app.appspot.com', // Replace with your Storage Bucket
+      authDomain: 'zenrova-app.firebaseapp.com', // Replace with your Auth Domain
+      measurementId: 'G-528599767', // Replace with your Measurement ID
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/providers/user_provider.dart';
@@ -20,7 +21,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
   // Credentials are checked but NOT displayed in the UI
   static const String _adminEmail = 'admin@zenrova.com';
-  static const String _adminPassword = 'Zenrova@Admin2025!';
+  static const String _adminPassword = 'admin123';
 
   @override
   void dispose() {
@@ -43,41 +44,54 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    // Debug: Print entered values
-    print('DEBUG: Entered email: "$email"');
-    print('DEBUG: Entered password: "$password"');
-    print('DEBUG: Expected email: "$_adminEmail"');
-    print('DEBUG: Expected password: "$_adminPassword"');
-    print('DEBUG: Email match: ${email == _adminEmail}');
-    print('DEBUG: Password match: ${password == _adminPassword}');
-
     if (email.isEmpty || password.isEmpty) {
       _showError('Please enter your email and password.');
-      return;
-    }
-
-    // Temporary bypass for debugging - remove this in production
-    if (email.toLowerCase() == 'bypass' && password.toLowerCase() == 'admin') {
-      print('DEBUG: Using bypass login');
-      _navigateToDashboard();
-      return;
-    }
-
-    if (email != _adminEmail || password != _adminPassword) {
-      _showError('Invalid admin credentials. Please try again.');
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      await Future.delayed(const Duration(milliseconds: 800));
+      // Use real Firebase Admin authentication
+      final FirebaseAuth auth = FirebaseAuth.instance;
+      
+      // Try to sign in with admin credentials using Firebase Auth
+      UserCredential result = await auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
       if (mounted) {
+        // Create admin user in UserProvider
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        userProvider.createAdminUser('Admin');
+        
         _navigateToDashboard();
       }
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Login failed. Please try again.';
+      
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'Admin user not found. Please check credentials.';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Incorrect password. Please try again.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Invalid email format. Please check your email.';
+          break;
+        case 'user-disabled':
+          errorMessage = 'Admin account has been disabled.';
+          break;
+        case 'too-many-requests':
+          errorMessage = 'Too many failed attempts. Please try again later.';
+          break;
+      }
+      
+      _showError(errorMessage);
     } catch (e) {
-      _showError('Login failed. Please try again.');
+      _showError('An unexpected error occurred. Please try again.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

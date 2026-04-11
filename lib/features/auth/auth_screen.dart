@@ -264,6 +264,116 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   // ── Google panel ───────────────────────────────────────────────
+  Widget _buildGooglePanel() {
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark 
+              ? const Color(0xFF2A2A2A) 
+              : const Color(0xFFE0D9FF), 
+          width: 1.5,
+        ),
+        boxShadow: [BoxShadow(
+          color: Theme.of(context).brightness == Brightness.dark 
+              ? Colors.black.withValues(alpha: 0.2) 
+              : AppColors.shadowSoft,
+          blurRadius: 10,
+          offset: const Offset(0, 3),
+        )],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Enter your Google account email',
+            style: AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildFieldGroup(
+            controller: _googleEmailCtrl,
+            label: 'Email',
+            hint: 'yourname@gmail.com',
+            icon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+            focusNode: _googleFocusNode,
+            hasError: _googleEmailError,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Please enter your email';
+              if (!v.contains('@')) return 'Please enter a valid email';
+              return null;
+            },
+          ),
+          if (_googleEmailError) ...[
+            const SizedBox(height: 8),
+            Text(
+              _googleEmailErrText,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.error,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          Container(
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.42),
+                blurRadius: 22, 
+                offset: const Offset(0, 9),
+              )],
+            ),
+            child: ElevatedButton(
+              onPressed: _isGoogleLoading ? null : _handleGoogleContinue,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                padding: EdgeInsets.zero,
+              ),
+              child: _isGoogleLoading
+                  ? const SizedBox(
+                      width: 24, 
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white, 
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const _GoogleLogo(),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Continue with Google',
+                          style: AppTypography.button.copyWith(
+                            color: Colors.white, 
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _toggleGooglePanel() {
     HapticFeedback.lightImpact();
     final opening = !_showGooglePanel;
@@ -488,11 +598,11 @@ class _AuthScreenState extends State<AuthScreen>
     return Container(
       height: 52,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8E3FF), width: 1.5),
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2A2A2A) : const Color(0xFFE8E3FF), width: 1.5),
         boxShadow: [BoxShadow(
-            color: AppColors.shadowSoft, blurRadius: 10,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.black.withValues(alpha: 0.2) : AppColors.shadowSoft, blurRadius: 10,
             offset: const Offset(0, 3))],
       ),
       child: Stack(children: [
@@ -806,14 +916,14 @@ class _AuthScreenState extends State<AuthScreen>
   // ─── Divider ──────────────────────────────────────────────────────
   Widget _buildDivider() {
     return Row(children: [
-      Expanded(child: Container(height: 1, color: const Color(0xFFE0D9FF))),
+      Expanded(child: Container(height: 1, color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2A2A2A) : const Color(0xFFE0D9FF))),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Text('Or continue with',
             style: AppTypography.caption.copyWith(
-                color: AppColors.onSurfaceMuted, letterSpacing: 0.3)),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), letterSpacing: 0.3)),
       ),
-      Expanded(child: Container(height: 1, color: const Color(0xFFE0D9FF))),
+      Expanded(child: Container(height: 1, color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2A2A2A) : const Color(0xFFE0D9FF))),
     ]);
   }
 
@@ -825,17 +935,17 @@ class _AuthScreenState extends State<AuthScreen>
         duration: const Duration(milliseconds: 220),
         height: 56,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: _showGooglePanel
-                ? AppColors.primary : const Color(0xFFE0D9FF),
+                ? AppColors.primary : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2A2A2A) : const Color(0xFFE0D9FF)),
             width: _showGooglePanel ? 2.0 : 1.5,
           ),
           boxShadow: [BoxShadow(
             color: _showGooglePanel
                 ? AppColors.primary.withValues(alpha: 0.12)
-                : AppColors.shadowSoft,
+                : (Theme.of(context).brightness == Brightness.dark ? Colors.black.withValues(alpha: 0.2) : AppColors.shadowSoft),
             blurRadius: _showGooglePanel ? 18 : 10,
             offset: const Offset(0, 3))],
         ),
@@ -846,7 +956,7 @@ class _AuthScreenState extends State<AuthScreen>
             const SizedBox(width: 12),
             Text('Continue with Google',
                 style: AppTypography.button.copyWith(
-                    color: AppColors.onSurface,
+                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
                     fontWeight: FontWeight.w600,
                     fontSize: 15)),
             const SizedBox(width: 8),
@@ -857,173 +967,9 @@ class _AuthScreenState extends State<AuthScreen>
               child: Icon(Icons.keyboard_arrow_down_rounded,
                   size: 20,
                   color: _showGooglePanel
-                      ? AppColors.primary : AppColors.onSurfaceMuted),
+                      ? AppColors.primary : (Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.6))),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  // ─── Google email panel ───────────────────────────────────────────
-  Widget _buildGooglePanel() {
-    return Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFEDE9FF), width: 1.5),
-        boxShadow: [BoxShadow(
-          color: AppColors.primary.withValues(alpha: 0.07),
-          blurRadius: 20, offset: const Offset(0, 6))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            const _GoogleLogo(),
-            const SizedBox(width: 10),
-            Text('Sign in with Google',
-                style: AppTypography.heading4
-                    .copyWith(color: Theme.of(context).colorScheme.onSurface)),
-          ]),
-          const SizedBox(height: 6),
-          Text('Enter the email linked to your Google account.',
-              style: AppTypography.body2
-                  .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 16),
-          _buildGoogleEmailField(),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            child: _googleEmailError
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 8, left: 4),
-                    child: Row(children: [
-                      const Icon(Icons.error_outline_rounded,
-                          size: 14, color: AppColors.error),
-                      const SizedBox(width: 6),
-                      Flexible(child: Text(_googleEmailErrText,
-                          style: AppTypography.caption
-                              .copyWith(color: AppColors.error))),
-                    ]),
-                  )
-                : const SizedBox.shrink(),
-          ),
-          const SizedBox(height: 16),
-          _buildGoogleContinueButton(),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F5FF),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFEDE9FF), width: 1),
-            ),
-            child: Row(children: [
-              Icon(Icons.lock_outline_rounded,
-                  size: 15,
-                  color: AppColors.primary.withValues(alpha: 0.7)),
-              const SizedBox(width: 8),
-              Expanded(child: Text(
-                  "We'll verify your Google account securely. Your data is safe.",
-                  style: AppTypography.caption.copyWith(
-                      color: AppColors.onSurfaceMuted, height: 1.45))),
-            ]),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGoogleEmailField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text('Email',
-              style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.onSurface, fontWeight: FontWeight.w600)),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            boxShadow: [BoxShadow(
-              color: _googleEmailError
-                  ? AppColors.error.withValues(alpha: 0.08)
-                  : AppColors.primary.withValues(alpha: 0.06),
-              blurRadius: 14, offset: const Offset(0, 4))],
-          ),
-          child: TextField(
-            controller: _googleEmailCtrl,
-            focusNode: _googleFocusNode,
-            keyboardType: TextInputType.emailAddress,
-            onSubmitted: (_) => _handleGoogleContinue(),
-            style: AppTypography.input.copyWith(color: Theme.of(context).colorScheme.onSurface),
-            decoration: InputDecoration(
-              hintText: 'your@email.com',
-              enabledBorder: _googleEmailError
-                  ? OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(
-                          color: AppColors.error, width: 1.5))
-                  : null,
-              prefixIcon: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Icon(Icons.email_outlined, size: 20,
-                    color: _googleEmailError
-                        ? AppColors.error : AppColors.onSurfaceMuted),
-              ),
-              prefixIconConstraints:
-                  const BoxConstraints(minWidth: 52, minHeight: 52),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGoogleContinueButton() {
-    return GestureDetector(
-      onTap: _isGoogleLoading ? null : _handleGoogleContinue,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        height: 54,
-        decoration: BoxDecoration(
-          color: _isGoogleLoading
-              ? AppColors.primary.withValues(alpha: 0.85)
-              : const Color(0xFFF0ECFF),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: _isGoogleLoading
-                ? AppColors.primary : const Color(0xFFE0D9FF),
-            width: 1.5,
-          ),
-        ),
-        child: Center(
-          child: _isGoogleLoading
-              ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const SizedBox(width: 20, height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2.5, color: Colors.white)),
-                  const SizedBox(width: 12),
-                  Text('Signing in…',
-                      style: AppTypography.button
-                          .copyWith(color: Colors.white, fontSize: 15)),
-                ])
-              : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const _GoogleLogo(),
-                  const SizedBox(width: 10),
-                  Text('Continue with Google',
-                      style: AppTypography.button.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15)),
-                  const SizedBox(width: 6),
-                  const Icon(Icons.arrow_forward_rounded,
-                      size: 16, color: AppColors.primary),
-                ]),
         ),
       ),
     );
@@ -1034,11 +980,11 @@ class _AuthScreenState extends State<AuthScreen>
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE0D9FF), width: 1.5),
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2A2A2A) : const Color(0xFFE0D9FF), width: 1.5),
         boxShadow: [BoxShadow(
-            color: AppColors.shadowSoft, blurRadius: 10,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.black.withValues(alpha: 0.2) : AppColors.shadowSoft, blurRadius: 10,
             offset: const Offset(0, 3))],
       ),
       child: ElevatedButton(
@@ -1048,7 +994,7 @@ class _AuthScreenState extends State<AuthScreen>
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          foregroundColor: AppColors.onSurface,
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
           minimumSize: const Size(double.infinity, 56),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16)),
@@ -1073,7 +1019,7 @@ class _AuthScreenState extends State<AuthScreen>
             const SizedBox(width: 12),
             Text('Continue with Facebook',
                 style: AppTypography.button.copyWith(
-                    color: AppColors.onSurface,
+                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
                     fontWeight: FontWeight.w600,
                     fontSize: 15)),
           ],
@@ -1087,11 +1033,11 @@ class _AuthScreenState extends State<AuthScreen>
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8E3FF), width: 1.5),
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2A2A2A) : const Color(0xFFE8E3FF), width: 1.5),
         boxShadow: [BoxShadow(
-          color: AppColors.shadowSoft,
+          color: Theme.of(context).brightness == Brightness.dark ? Colors.black.withValues(alpha: 0.2) : AppColors.shadowSoft,
           blurRadius: 10,
           offset: const Offset(0, 3),
         )],

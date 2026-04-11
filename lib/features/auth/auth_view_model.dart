@@ -15,8 +15,19 @@ class AuthViewModel extends ChangeNotifier {
   String? _currentUserEmail;
   bool _isAuthenticated = false;
 
+  // Demo mode for live presentation - disabled for real users
+  static const bool _demoMode = false;
+  
   final FirebaseAuthService _authService = FirebaseAuthService();
   final FirestoreService _firestoreService = FirestoreService();
+
+  // Demo users for presentation
+  static const Map<String, String> _demoUsers = {
+    'john@demo.com': 'password123',
+    'sarah@demo.com': 'password123',
+    'mike@demo.com': 'password123',
+    'admin@demo.com': 'admin123',
+  };
 
   // ── Getters ────────────────────────────────────────────────────
   bool get isLoading => _isLoading;
@@ -56,6 +67,22 @@ class AuthViewModel extends ChangeNotifier {
       BuildContext context, String uid, String email, String displayName) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
+    // Demo mode - create user locally without Firestore
+    if (_demoMode) {
+      final demoUser = UserModel(
+        id: uid,
+        email: email,
+        displayName: displayName,
+        createdAt: DateTime.now(),
+        lastLoginAt: DateTime.now(),
+        isEmailVerified: true,
+        isAdmin: email.contains('admin'), // Make admin users with 'admin' in email
+      );
+      userProvider.setUser(demoUser);
+      return;
+    }
+
+    // Firebase mode (original code)
     try {
       UserModel? existingUser = await _firestoreService.getUser(uid);
 
@@ -107,12 +134,34 @@ class AuthViewModel extends ChangeNotifier {
       _setError('Please enter your password.');
       return false;
     }
-    if (password.length < 6) {
-      _setError('Password must be at least 6 characters.');
-      return false;
-    }
 
     _setLoading(true);
+    
+    // Demo mode for live presentation
+    if (_demoMode) {
+      await Future.delayed(const Duration(milliseconds: 800)); // Simulate network delay
+      
+      final trimmedEmail = email.trim().toLowerCase();
+      if (_demoUsers.containsKey(trimmedEmail) && _demoUsers[trimmedEmail] == password) {
+        // Create demo user
+        final uid = 'demo_${trimmedEmail.replaceAll('@', '_').replaceAll('.', '_')}';
+        final displayName = trimmedEmail.split('@').first;
+        
+        if (context.mounted) {
+          await _loadAndSetUser(context, uid, trimmedEmail, displayName);
+        }
+        
+        _currentUserEmail = trimmedEmail;
+        _isAuthenticated = true;
+        _setSuccess('Welcome back to Zenrova!');
+        return true;
+      } else {
+        _setError('Invalid demo credentials. Try: john@demo.com / password123');
+        return false;
+      }
+    }
+    
+    // Firebase mode (original code)
     try {
       final credential = await _authService.signInWithEmailAndPassword(
         email: email.trim(),
@@ -151,12 +200,39 @@ class AuthViewModel extends ChangeNotifier {
       _setError('Please enter a valid email address.');
       return false;
     }
-    if (password.length < 8) {
-      _setError('Password must be at least 8 characters.');
+    if (password.length < 6) {
+      _setError('Password must be at least 6 characters.');
       return false;
     }
 
     _setLoading(true);
+    
+    // Demo mode for live presentation
+    if (_demoMode) {
+      await Future.delayed(const Duration(milliseconds: 1000)); // Simulate network delay
+      
+      final trimmedEmail = email.trim().toLowerCase();
+      
+      // Check if email already exists in demo users
+      if (_demoUsers.containsKey(trimmedEmail)) {
+        _setError('This email is already registered. Try signing in instead.');
+        return false;
+      }
+      
+      // Create new demo user
+      final uid = 'demo_${trimmedEmail.replaceAll('@', '_').replaceAll('.', '_')}';
+      
+      if (context.mounted) {
+        await _loadAndSetUser(context, uid, trimmedEmail, name.trim());
+      }
+      
+      _currentUserEmail = trimmedEmail;
+      _isAuthenticated = true;
+      _setSuccess('Welcome to Zenrova, ${Helpers.truncateText(name.trim(), 20)}!');
+      return true;
+    }
+    
+    // Firebase mode (original code)
     try {
       final credential = await _authService.registerWithEmailAndPassword(
         email: email.trim(),

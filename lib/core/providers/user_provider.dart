@@ -5,6 +5,11 @@ class UserProvider with ChangeNotifier {
   UserModel? _user;
   bool _isDarkMode = false;
 
+  UserProvider() {
+    // Ensure we start in light mode
+    _isDarkMode = false;
+  }
+
   UserModel? get user => _user;
 
   String get displayName => _user?.displayName ?? 'Guest';

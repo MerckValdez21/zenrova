@@ -6,6 +6,9 @@ import '../shared/models/mood_model.dart';
 class FirestoreService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
+  // Demo mode for live presentation - disabled for real users
+  static const bool _demoMode = false;
+  
   // Collection references
   static final CollectionReference _usersCollection = _firestore.collection('users');
   static final CollectionReference _moodsCollection = _firestore.collection('moods');
@@ -190,6 +193,48 @@ class FirestoreService {
   }
 
   Future<List<Map<String, dynamic>>> getAllCheckIns({int limit = 100}) async {
+    // Demo mode - return sample check-ins
+    if (_demoMode) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      final now = DateTime.now();
+      return [
+        {
+          'id': 'checkin_1',
+          'userId': 'demo_john_demo_com',
+          'userName': 'John Doe',
+          'mood': 'Great',
+          'sleep': '8 hours',
+          'energy': 'High',
+          'stress': 'Low',
+          'notes': 'Excellent sleep last night, feeling energized',
+          'createdAt': Timestamp.fromDate(now.subtract(const Duration(hours: 1))),
+        },
+        {
+          'id': 'checkin_2',
+          'userId': 'demo_sarah_demo_com',
+          'userName': 'Sarah Wilson',
+          'mood': 'Good',
+          'sleep': '7 hours',
+          'energy': 'Medium',
+          'stress': 'Medium',
+          'notes': 'Busy day but managing well',
+          'createdAt': Timestamp.fromDate(now.subtract(const Duration(hours: 3))),
+        },
+        {
+          'id': 'checkin_3',
+          'userId': 'demo_mike_demo_com',
+          'userName': 'Mike Johnson',
+          'mood': 'Okay',
+          'sleep': '6 hours',
+          'energy': 'Low',
+          'stress': 'High',
+          'notes': 'Stressed about work deadline',
+          'createdAt': Timestamp.fromDate(now.subtract(const Duration(hours: 5))),
+        },
+      ];
+    }
+    
+    // Firebase mode (original code)
     try {
       QuerySnapshot snapshot = await _firestore
           .collection('check_ins')
@@ -230,6 +275,50 @@ class FirestoreService {
   
   // Admin operations
   Future<List<UserModel>> getAllUsers() async {
+    // Demo mode - return sample users for presentation
+    if (_demoMode) {
+      await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
+      return [
+        UserModel(
+          id: 'demo_john_demo_com',
+          email: 'john@demo.com',
+          displayName: 'John Doe',
+          createdAt: DateTime.now().subtract(const Duration(days: 30)),
+          lastLoginAt: DateTime.now().subtract(const Duration(hours: 2)),
+          isEmailVerified: true,
+          isAdmin: false,
+        ),
+        UserModel(
+          id: 'demo_sarah_demo_com',
+          email: 'sarah@demo.com',
+          displayName: 'Sarah Wilson',
+          createdAt: DateTime.now().subtract(const Duration(days: 15)),
+          lastLoginAt: DateTime.now().subtract(const Duration(minutes: 30)),
+          isEmailVerified: true,
+          isAdmin: false,
+        ),
+        UserModel(
+          id: 'demo_mike_demo_com',
+          email: 'mike@demo.com',
+          displayName: 'Mike Johnson',
+          createdAt: DateTime.now().subtract(const Duration(days: 7)),
+          lastLoginAt: DateTime.now().subtract(const Duration(days: 1)),
+          isEmailVerified: true,
+          isAdmin: false,
+        ),
+        UserModel(
+          id: 'demo_admin_demo_com',
+          email: 'admin@demo.com',
+          displayName: 'Admin User',
+          createdAt: DateTime.now().subtract(const Duration(days: 60)),
+          lastLoginAt: DateTime.now().subtract(const Duration(minutes: 15)),
+          isEmailVerified: true,
+          isAdmin: true,
+        ),
+      ];
+    }
+    
+    // Firebase mode (original code)
     try {
       QuerySnapshot snapshot = await _usersCollection.get();
       return snapshot.docs
@@ -242,6 +331,39 @@ class FirestoreService {
   }
   
   Future<List<Map<String, dynamic>>> getAllJournalEntries({int limit = 100}) async {
+    // Demo mode - return sample journal entries
+    if (_demoMode) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      final now = DateTime.now();
+      return [
+        {
+          'id': 'journal_1',
+          'userId': 'demo_john_demo_com',
+          'userName': 'John Doe',
+          'title': 'My Wellness Journey',
+          'content': 'Today I started my mindfulness practice. It feels amazing to take a moment for myself and focus on my mental health. I\'ve been feeling stressed lately with work, but this app is helping me stay centered.',
+          'createdAt': Timestamp.fromDate(now.subtract(const Duration(hours: 3))),
+        },
+        {
+          'id': 'journal_2',
+          'userId': 'demo_sarah_demo_com',
+          'userName': 'Sarah Wilson',
+          'title': 'Gratitude Practice',
+          'content': 'I\'m grateful for my family, my health, and the opportunity to grow every day. Practicing gratitude has really shifted my perspective and helped me appreciate the small things in life.',
+          'createdAt': Timestamp.fromDate(now.subtract(const Duration(hours: 5))),
+        },
+        {
+          'id': 'journal_3',
+          'userId': 'demo_mike_demo_com',
+          'userName': 'Mike Johnson',
+          'title': 'Managing Anxiety',
+          'content': 'Had a tough day with anxiety, but used the breathing exercises and felt much better. It\'s important to remember that it\'s okay to have bad days and that they will pass.',
+          'createdAt': Timestamp.fromDate(now.subtract(const Duration(days: 1))),
+        },
+      ];
+    }
+    
+    // Firebase mode (original code)
     try {
       QuerySnapshot snapshot = await _journalsCollection
           .orderBy('createdAt', descending: true)
@@ -261,6 +383,51 @@ class FirestoreService {
   }
   
   Future<List<Map<String, dynamic>>> getAllMoodEntries({int limit = 100}) async {
+    // Demo mode - return sample mood entries
+    if (_demoMode) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      final now = DateTime.now();
+      return [
+        {
+          'id': 'mood_1',
+          'userId': 'demo_john_demo_com',
+          'userName': 'John Doe',
+          'mood': 'Happy',
+          'intensity': 8,
+          'notes': 'Feeling great after my morning meditation session',
+          'createdAt': Timestamp.fromDate(now.subtract(const Duration(hours: 2))),
+        },
+        {
+          'id': 'mood_2',
+          'userId': 'demo_sarah_demo_com',
+          'userName': 'Sarah Wilson',
+          'mood': 'Calm',
+          'intensity': 7,
+          'notes': 'Peaceful evening with some light reading',
+          'createdAt': Timestamp.fromDate(now.subtract(const Duration(hours: 4))),
+        },
+        {
+          'id': 'mood_3',
+          'userId': 'demo_mike_demo_com',
+          'userName': 'Mike Johnson',
+          'mood': 'Anxious',
+          'intensity': 6,
+          'notes': 'Work stress but managing with breathing exercises',
+          'createdAt': Timestamp.fromDate(now.subtract(const Duration(hours: 6))),
+        },
+        {
+          'id': 'mood_4',
+          'userId': 'demo_john_demo_com',
+          'userName': 'John Doe',
+          'mood': 'Excited',
+          'intensity': 9,
+          'notes': 'Looking forward to the weekend plans!',
+          'createdAt': Timestamp.fromDate(now.subtract(const Duration(days: 1))),
+        },
+      ];
+    }
+    
+    // Firebase mode (original code)
     try {
       QuerySnapshot snapshot = await _moodsCollection
           .orderBy('createdAt', descending: true)
@@ -300,6 +467,23 @@ class FirestoreService {
   }
   
   Future<Map<String, dynamic>> getAdminStats() async {
+    // Demo mode - return sample statistics
+    if (_demoMode) {
+      await Future.delayed(const Duration(milliseconds: 400));
+      return {
+        'totalUsers': 4,
+        'adminUsers': 1,
+        'regularUsers': 3,
+        'totalJournals': 12,
+        'totalMoods': 28,
+        'totalCheckIns': 15,
+        'recentJournals': 5,
+        'recentMoods': 8,
+        'lastUpdated': DateTime.now(),
+      };
+    }
+    
+    // Firebase mode (original code)
     try {
       // Get all users
       QuerySnapshot userSnapshot = await _usersCollection.get();
